@@ -41,6 +41,10 @@ defmodule Elixirlang.Lexer do
             {Token.new(Token.gt(), ">"), read_char(lexer)}
           end
 
+        ?" ->
+          {string, lexer} = read_string(lexer)
+          {Token.new(Token.string(), string), read_char(lexer)}
+
         ?+ ->
           {Token.new(Token.plus(), "+"), read_char(lexer)}
 
@@ -70,6 +74,10 @@ defmodule Elixirlang.Lexer do
 
         ?} ->
           {Token.new(Token.rbrace(), "}"), read_char(lexer)}
+
+        ?# ->
+          lexer = skip_comment(lexer)
+          next_token(lexer)
 
         nil ->
           {Token.new(Token.eof(), ""), lexer}
@@ -139,6 +147,14 @@ defmodule Elixirlang.Lexer do
     {number, lexer}
   end
 
+  defp read_string(%__MODULE__{} = lexer) do
+    position = lexer.position + 1
+    lexer = read_char(lexer)
+    lexer = read_while(lexer, fn ch -> ch != ?" end)
+    string = String.slice(lexer.input, position, lexer.position - position)
+    {string, lexer}
+  end
+
   defp read_while(%__MODULE__{} = lexer, condition) do
     if lexer.ch && condition.(lexer.ch) do
       lexer
@@ -157,6 +173,11 @@ defmodule Elixirlang.Lexer do
     else
       lexer
     end
+  end
+
+  defp skip_comment(%__MODULE__{} = lexer) do
+    lexer = read_while(lexer, fn ch -> ch != ?\n end)
+    read_char(lexer)
   end
 
   defp letter?(ch) when ch in ?a..?z, do: true

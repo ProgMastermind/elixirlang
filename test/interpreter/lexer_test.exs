@@ -71,6 +71,42 @@ defmodule Elixirlang.LexerTest do
     verify_tokens(input, expected_tokens)
   end
 
+  test "next_token handles string literals" do
+    input = ~s("hello world" "test")
+
+    expected_tokens = [
+      {Token.string(), "hello world"},
+      {Token.string(), "test"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles comments" do
+    input = """
+    # this is a comment
+    def add(x) # inline comment
+      x + 1 # another comment
+    end
+    """
+
+    expected_tokens = [
+      {Token.def_(), "def"},
+      {Token.ident(), "add"},
+      {Token.lparen(), "("},
+      {Token.ident(), "x"},
+      {Token.rparen(), ")"},
+      {Token.ident(), "x"},
+      {Token.plus(), "+"},
+      {Token.int(), "1"},
+      {Token.end_(), "end"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
   test "next_token handles identifiers and numbers" do
     input = """
     let x = 5;
