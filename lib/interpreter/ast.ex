@@ -20,4 +20,9 @@ defmodule Elixirlang.AST do
     defstruct token: nil, value: 0
     def token_literal(integer), do: integer.token.literal
   end
+
+  defmodule PrefixExpression do
+    defstruct token: nil, operator: "", right: nil
+    def token_literal(prefix), do: prefix.token.literal
+  end
 end

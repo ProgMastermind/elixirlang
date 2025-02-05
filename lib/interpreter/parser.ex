@@ -54,6 +54,8 @@ defmodule Elixirlang.Parser do
   defp parse_expression(parser, _precedence) do
     case parser.current_token.type do
       :INT -> parse_integer_literal(parser)
+      :BANG -> parse_prefix_expression(parser)
+      :MINUS -> parse_prefix_expression(parser)
       _ -> {nil, parser}
     end
   end
@@ -63,6 +65,20 @@ defmodule Elixirlang.Parser do
        token: parser.current_token,
        value: String.to_integer(parser.current_token.literal)
      }, parser}
+  end
+
+  defp parse_prefix_expression(parser) do
+    token = parser.current_token
+    operator = parser.current_token.literal
+
+    parser = next_token(parser)
+    {right, new_parser} = parse_expression(parser, :PREFIX)
+
+    {%AST.PrefixExpression{
+       token: token,
+       operator: operator,
+       right: right
+     }, new_parser}
   end
 
   defp next_token(parser) do
