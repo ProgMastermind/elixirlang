@@ -1,6 +1,27 @@
 defmodule Elixirlang.Parser do
   alias Elixirlang.{Token, Lexer, AST}
 
+  @precedences %{
+    :EQ => :EQUALS,
+    :NOT_EQ => :EQUALS,
+    :LT => :LESSGREATER,
+    :GT => :LESSGREATER,
+    :PLUS => :SUM,
+    :MINUS => :SUM,
+    :SLASH => :PRODUCT,
+    :ASTERISK => :PRODUCT
+  }
+
+  @precedence_values %{
+    :LOWEST => 1,
+    :EQUALS => 2,
+    :LESSGREATER => 3,
+    :SUM => 4,
+    :PRODUCT => 5,
+    :PREFIX => 6,
+    :CALL => 7
+  }
+
   defstruct lexer: nil,
             current_token: nil,
             peek_token: nil,
@@ -8,7 +29,7 @@ defmodule Elixirlang.Parser do
 
   def new(lexer) do
     parser = %__MODULE__{lexer: lexer}
-    # Read two tokens to set current_token and peek_token
+
     parser
     |> next_token()
     |> next_token()
@@ -51,12 +72,39 @@ defmodule Elixirlang.Parser do
     {%AST.ExpressionStatement{token: token, expression: expression}, new_parser}
   end
 
-  defp parse_expression(parser, _precedence) do
-    case parser.current_token.type do
-      :INT -> parse_integer_literal(parser)
-      :BANG -> parse_prefix_expression(parser)
-      :MINUS -> parse_prefix_expression(parser)
-      _ -> {nil, parser}
+  defp parse_expression(parser, precedence) do
+    {left, new_parser} =
+      case parser.current_token.type do
+        :INT -> parse_integer_literal(parser)
+        :BANG -> parse_prefix_expression(parser)
+        :MINUS -> parse_prefix_expression(parser)
+        _ -> {nil, parser}
+      end
+
+    parse_expression_continued(new_parser, left, @precedence_values[precedence])
+  end
+
+  defp parse_expression_continued(parser, left, precedence) do
+    cond do
+      left == nil ->
+        {nil, parser}
+
+      peek_token_is(parser, Token.semicolon()) ->
+        {left, parser}
+
+      precedence >= peek_precedence_value(parser) ->
+        {left, parser}
+
+      true ->
+        case infix_parse_fn(parser.peek_token.type) do
+          nil ->
+            {left, parser}
+
+          infix_fn ->
+            parser = next_token(parser)
+            {new_left, new_parser} = infix_fn.(parser, left)
+            parse_expression_continued(new_parser, new_left, precedence)
+        end
     end
   end
 
@@ -79,6 +127,42 @@ defmodule Elixirlang.Parser do
        operator: operator,
        right: right
      }, new_parser}
+  end
+
+  defp parse_infix_expression(parser, left) do
+    token = parser.current_token
+    operator = parser.current_token.literal
+    precedence = current_precedence_value(parser)
+
+    parser = next_token(parser)
+    {right, new_parser} = parse_expression(parser, get_precedence_name(precedence))
+
+    {%AST.InfixExpression{
+       token: token,
+       left: left,
+       operator: operator,
+       right: right
+     }, new_parser}
+  end
+
+  defp infix_parse_fn(token_type) when token_type in [:PLUS, :MINUS, :SLASH, :ASTERISK] do
+    &parse_infix_expression/2
+  end
+
+  defp infix_parse_fn(_), do: nil
+
+  defp peek_precedence_value(parser) do
+    precedence = Map.get(@precedences, parser.peek_token.type, :LOWEST)
+    @precedence_values[precedence]
+  end
+
+  defp current_precedence_value(parser) do
+    precedence = Map.get(@precedences, parser.current_token.type, :LOWEST)
+    @precedence_values[precedence]
+  end
+
+  defp get_precedence_name(value) do
+    Enum.find(@precedence_values, fn {_k, v} -> v == value end) |> elem(0)
   end
 
   defp next_token(parser) do

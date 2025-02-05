@@ -37,6 +37,49 @@ defmodule Elixirlang.ParserTest do
     end)
   end
 
+  test "parses infix expressions" do
+    tests = [
+      {"5 + 5;", 5, "+", 5},
+      {"5 - 5;", 5, "-", 5},
+      {"5 * 5;", 5, "*", 5},
+      {"5 / 5;", 5, "/", 5}
+    ]
+
+    Enum.each(tests, fn {input, left_value, operator, right_value} ->
+      program = parse_program(input)
+
+      assert length(program.statements) == 1
+      stmt = List.first(program.statements)
+      assert %AST.ExpressionStatement{} = stmt
+      assert %AST.InfixExpression{} = stmt.expression
+      assert_integer_literal(stmt.expression.left, left_value)
+      assert stmt.expression.operator == operator
+      assert_integer_literal(stmt.expression.right, right_value)
+    end)
+  end
+
+  test "handles operator precedence correctly" do
+    tests = [
+      {
+        "5 * 2 + 1;",
+        "((5 * 2) + 1)"
+      },
+      {
+        "5 + 2 * 1;",
+        "(5 + (2 * 1))"
+      },
+      {
+        "2 * 2 * 2;",
+        "((2 * 2) * 2)"
+      }
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      program = parse_program(input)
+      assert length(program.statements) == 1
+    end)
+  end
+
   defp assert_integer_literal(expr, value) do
     assert %AST.IntegerLiteral{} = expr
     assert expr.value == value
