@@ -20,10 +20,96 @@ defmodule Elixirlang.LexerTest do
     verify_tokens(input, expected_tokens)
   end
 
+  test "next_token handles comparison operators" do
+    input = "== != < > <= >="
+
+    expected_tokens = [
+      {Token.eq(), "=="},
+      {Token.not_eq(), "!="},
+      {Token.lt(), "<"},
+      {Token.gt(), ">"},
+      {Token.lte(), "<="},
+      {Token.gte(), ">="},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles arithmetic operators" do
+    input = "+ - * / ="
+
+    expected_tokens = [
+      {Token.plus(), "+"},
+      {Token.minus(), "-"},
+      {Token.asterisk(), "*"},
+      {Token.slash(), "/"},
+      {Token.assign(), "="},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles keywords" do
+    input = """
+    def if else return true false do end
+    """
+
+    expected_tokens = [
+      {Token.def_(), "def"},
+      {Token.if_(), "if"},
+      {Token.else_(), "else"},
+      {Token.return(), "return"},
+      {Token.true_(), "true"},
+      {Token.false_(), "false"},
+      {Token.do_(), "do"},
+      {Token.end_(), "end"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles identifiers and numbers" do
+    input = """
+    let x = 5;
+    let y = 10;
+    let add = x + y;
+    """
+
+    expected_tokens = [
+      {Token.ident(), "let"},
+      {Token.ident(), "x"},
+      {Token.assign(), "="},
+      {Token.int(), "5"},
+      {Token.semicolon(), ";"},
+      {Token.ident(), "let"},
+      {Token.ident(), "y"},
+      {Token.assign(), "="},
+      {Token.int(), "10"},
+      {Token.semicolon(), ";"},
+      {Token.ident(), "let"},
+      {Token.ident(), "add"},
+      {Token.assign(), "="},
+      {Token.ident(), "x"},
+      {Token.plus(), "+"},
+      {Token.ident(), "y"},
+      {Token.semicolon(), ";"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
   test "next_token handles a complete program" do
     input = """
     def add(x, y) do
-      x + y;
+      if x > y do
+        return x;
+      else
+        return y;
+      end
     end
     """
 
@@ -36,25 +122,20 @@ defmodule Elixirlang.LexerTest do
       {Token.ident(), "y"},
       {Token.rparen(), ")"},
       {Token.do_(), "do"},
+      {Token.if_(), "if"},
       {Token.ident(), "x"},
-      {Token.plus(), "+"},
+      {Token.gt(), ">"},
+      {Token.ident(), "y"},
+      {Token.do_(), "do"},
+      {Token.return(), "return"},
+      {Token.ident(), "x"},
+      {Token.semicolon(), ";"},
+      {Token.else_(), "else"},
+      {Token.return(), "return"},
       {Token.ident(), "y"},
       {Token.semicolon(), ";"},
       {Token.end_(), "end"},
-      {Token.eof(), ""}
-    ]
-
-    verify_tokens(input, expected_tokens)
-  end
-
-  test "next_token handles numbers" do
-    input = "5 + 10;"
-
-    expected_tokens = [
-      {Token.int(), "5"},
-      {Token.plus(), "+"},
-      {Token.int(), "10"},
-      {Token.semicolon(), ";"},
+      {Token.end_(), "end"},
       {Token.eof(), ""}
     ]
 

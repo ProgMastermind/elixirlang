@@ -14,16 +14,38 @@ defmodule Elixirlang.Lexer do
     {token, new_lexer} =
       case lexer.ch do
         ?= ->
-          {Token.new(Token.assign(), "="), read_char(lexer)}
+          if peek_char(lexer) == ?= do
+            {Token.new(Token.eq(), "=="), read_char(read_char(lexer))}
+          else
+            {Token.new(Token.assign(), "="), read_char(lexer)}
+          end
+
+        ?! ->
+          if peek_char(lexer) == ?= do
+            {Token.new(Token.not_eq(), "!="), read_char(read_char(lexer))}
+          else
+            {Token.new(Token.bang(), "!"), read_char(lexer)}
+          end
+
+        ?< ->
+          if peek_char(lexer) == ?= do
+            {Token.new(Token.lte(), "<="), read_char(read_char(lexer))}
+          else
+            {Token.new(Token.lt(), "<"), read_char(lexer)}
+          end
+
+        ?> ->
+          if peek_char(lexer) == ?= do
+            {Token.new(Token.gte(), ">="), read_char(read_char(lexer))}
+          else
+            {Token.new(Token.gt(), ">"), read_char(lexer)}
+          end
 
         ?+ ->
           {Token.new(Token.plus(), "+"), read_char(lexer)}
 
         ?- ->
           {Token.new(Token.minus(), "-"), read_char(lexer)}
-
-        ?! ->
-          {Token.new(Token.bang(), "!"), read_char(lexer)}
 
         ?* ->
           {Token.new(Token.asterisk(), "*"), read_char(lexer)}
@@ -91,25 +113,29 @@ defmodule Elixirlang.Lexer do
     }
   end
 
+  defp peek_char(%__MODULE__{} = lexer) do
+    if lexer.read_position >= String.length(lexer.input) do
+      nil
+    else
+      String.at(lexer.input, lexer.read_position)
+      |> case do
+        nil -> nil
+        str -> String.to_charlist(str) |> hd()
+      end
+    end
+  end
+
   defp read_identifier(%__MODULE__{} = lexer) do
     position = lexer.position
-
     lexer = read_while(lexer, &letter?/1)
-
-    identifier =
-      String.slice(lexer.input, position, lexer.position - position)
-
+    identifier = String.slice(lexer.input, position, lexer.position - position)
     {identifier, lexer}
   end
 
   defp read_number(%__MODULE__{} = lexer) do
     position = lexer.position
-
     lexer = read_while(lexer, &digit?/1)
-
-    number =
-      String.slice(lexer.input, position, lexer.position - position)
-
+    number = String.slice(lexer.input, position, lexer.position - position)
     {number, lexer}
   end
 

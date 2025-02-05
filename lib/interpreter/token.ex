@@ -23,6 +23,12 @@ defmodule Elixirlang.Token do
   def bang, do: :BANG
   def asterisk, do: :ASTERISK
   def slash, do: :SLASH
+  def eq, do: :EQ
+  def not_eq, do: :NOT_EQ
+  def lt, do: :LT
+  def gt, do: :GT
+  def lte, do: :LTE
+  def gte, do: :GTE
 
   # Delimiters
   def comma, do: :COMMA
