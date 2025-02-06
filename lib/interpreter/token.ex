@@ -17,7 +17,8 @@ defmodule Elixirlang.Token do
   def atom, do: :ATOM
 
   # Operators
-  def assign, do: :ASSIGN
+  # = for pattern matching
+  def match, do: :MATCH
   def plus, do: :PLUS
   def minus, do: :MINUS
   def bang, do: :BANG
@@ -32,14 +33,12 @@ defmodule Elixirlang.Token do
 
   # Delimiters
   def comma, do: :COMMA
-  def semicolon, do: :SEMICOLON
   def lparen, do: :LPAREN
   def rparen, do: :RPAREN
   def lbrace, do: :LBRACE
   def rbrace, do: :RBRACE
 
   # Keywords
-  def function, do: :FUNCTION
   def def_, do: :DEF
   def do_, do: :DO
   def end_, do: :END
@@ -47,7 +46,6 @@ defmodule Elixirlang.Token do
   def false_, do: :FALSE
   def if_, do: :IF
   def else_, do: :ELSE
-  def return, do: :RETURN
 
   def keywords do
     %{
@@ -57,8 +55,7 @@ defmodule Elixirlang.Token do
       "true" => :TRUE,
       "false" => :FALSE,
       "if" => :IF,
-      "else" => :ELSE,
-      "return" => :RETURN
+      "else" => :ELSE
     }
   end
 

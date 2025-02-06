@@ -17,7 +17,7 @@ defmodule Elixirlang.Lexer do
           if peek_char(lexer) == ?= do
             {Token.new(Token.eq(), "=="), read_char(read_char(lexer))}
           else
-            {Token.new(Token.assign(), "="), read_char(lexer)}
+            {Token.new(Token.match(), "="), read_char(lexer)}
           end
 
         ?! ->
@@ -45,6 +45,10 @@ defmodule Elixirlang.Lexer do
           {string, lexer} = read_string(lexer)
           {Token.new(Token.string(), string), read_char(lexer)}
 
+        ?: ->
+          {atom, lexer} = read_atom(lexer)
+          {Token.new(Token.atom(), atom), lexer}
+
         ?+ ->
           {Token.new(Token.plus(), "+"), read_char(lexer)}
 
@@ -59,9 +63,6 @@ defmodule Elixirlang.Lexer do
 
         ?, ->
           {Token.new(Token.comma(), ","), read_char(lexer)}
-
-        ?; ->
-          {Token.new(Token.semicolon(), ";"), read_char(lexer)}
 
         ?( ->
           {Token.new(Token.lparen(), "("), read_char(lexer)}
@@ -153,6 +154,14 @@ defmodule Elixirlang.Lexer do
     lexer = read_while(lexer, fn ch -> ch != ?" end)
     string = String.slice(lexer.input, position, lexer.position - position)
     {string, lexer}
+  end
+
+  defp read_atom(%__MODULE__{} = lexer) do
+    lexer = read_char(lexer)
+    position = lexer.position
+    lexer = read_while(lexer, &letter?/1)
+    atom = String.slice(lexer.input, position, lexer.position - position)
+    {atom, lexer}
   end
 
   defp read_while(%__MODULE__{} = lexer, condition) do

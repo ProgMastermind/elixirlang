@@ -3,17 +3,15 @@ defmodule Elixirlang.LexerTest do
   alias Elixirlang.{Lexer, Token}
 
   test "next_token handles single character tokens" do
-    input = "=+(){},;"
+    input = "=+(){}"
 
     expected_tokens = [
-      {Token.assign(), "="},
+      {Token.match(), "="},
       {Token.plus(), "+"},
       {Token.lparen(), "("},
       {Token.rparen(), ")"},
       {Token.lbrace(), "{"},
       {Token.rbrace(), "}"},
-      {Token.comma(), ","},
-      {Token.semicolon(), ";"},
       {Token.eof(), ""}
     ]
 
@@ -44,7 +42,7 @@ defmodule Elixirlang.LexerTest do
       {Token.minus(), "-"},
       {Token.asterisk(), "*"},
       {Token.slash(), "/"},
-      {Token.assign(), "="},
+      {Token.match(), "="},
       {Token.eof(), ""}
     ]
 
@@ -53,14 +51,13 @@ defmodule Elixirlang.LexerTest do
 
   test "next_token handles keywords" do
     input = """
-    def if else return true false do end
+    def if else true false do end
     """
 
     expected_tokens = [
       {Token.def_(), "def"},
       {Token.if_(), "if"},
       {Token.else_(), "else"},
-      {Token.return(), "return"},
       {Token.true_(), "true"},
       {Token.false_(), "false"},
       {Token.do_(), "do"},
@@ -77,6 +74,18 @@ defmodule Elixirlang.LexerTest do
     expected_tokens = [
       {Token.string(), "hello world"},
       {Token.string(), "test"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles atoms" do
+    input = ":atom :test"
+
+    expected_tokens = [
+      {Token.atom(), "atom"},
+      {Token.atom(), "test"},
       {Token.eof(), ""}
     ]
 
@@ -109,68 +118,52 @@ defmodule Elixirlang.LexerTest do
 
   test "next_token handles identifiers and numbers" do
     input = """
-    let x = 5;
-    let y = 10;
-    let add = x + y;
+    x = 5
+    y = 10
+    add = x + y
     """
 
     expected_tokens = [
-      {Token.ident(), "let"},
       {Token.ident(), "x"},
-      {Token.assign(), "="},
+      {Token.match(), "="},
       {Token.int(), "5"},
-      {Token.semicolon(), ";"},
-      {Token.ident(), "let"},
       {Token.ident(), "y"},
-      {Token.assign(), "="},
+      {Token.match(), "="},
       {Token.int(), "10"},
-      {Token.semicolon(), ";"},
-      {Token.ident(), "let"},
       {Token.ident(), "add"},
-      {Token.assign(), "="},
+      {Token.match(), "="},
       {Token.ident(), "x"},
       {Token.plus(), "+"},
       {Token.ident(), "y"},
-      {Token.semicolon(), ";"},
       {Token.eof(), ""}
     ]
 
     verify_tokens(input, expected_tokens)
   end
 
-  test "next_token handles a complete program" do
+  test "next_token handles complex expressions" do
     input = """
-    def add(x, y) do
-      if x > y do
-        return x;
-      else
-        return y;
-      end
+    def sum(a, b) do
+      result = a + b
+      result
     end
     """
 
     expected_tokens = [
       {Token.def_(), "def"},
-      {Token.ident(), "add"},
+      {Token.ident(), "sum"},
       {Token.lparen(), "("},
-      {Token.ident(), "x"},
+      {Token.ident(), "a"},
       {Token.comma(), ","},
-      {Token.ident(), "y"},
+      {Token.ident(), "b"},
       {Token.rparen(), ")"},
       {Token.do_(), "do"},
-      {Token.if_(), "if"},
-      {Token.ident(), "x"},
-      {Token.gt(), ">"},
-      {Token.ident(), "y"},
-      {Token.do_(), "do"},
-      {Token.return(), "return"},
-      {Token.ident(), "x"},
-      {Token.semicolon(), ";"},
-      {Token.else_(), "else"},
-      {Token.return(), "return"},
-      {Token.ident(), "y"},
-      {Token.semicolon(), ";"},
-      {Token.end_(), "end"},
+      {Token.ident(), "result"},
+      {Token.match(), "="},
+      {Token.ident(), "a"},
+      {Token.plus(), "+"},
+      {Token.ident(), "b"},
+      {Token.ident(), "result"},
       {Token.end_(), "end"},
       {Token.eof(), ""}
     ]

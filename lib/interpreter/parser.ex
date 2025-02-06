@@ -6,6 +6,8 @@ defmodule Elixirlang.Parser do
     :NOT_EQ => :EQUALS,
     :LT => :LESSGREATER,
     :GT => :LESSGREATER,
+    :LTE => :LESSGREATER,
+    :GTE => :LESSGREATER,
     :PLUS => :SUM,
     :MINUS => :SUM,
     :SLASH => :PRODUCT,
@@ -61,14 +63,6 @@ defmodule Elixirlang.Parser do
   defp parse_expression_statement(parser) do
     token = parser.current_token
     {expression, new_parser} = parse_expression(parser, :LOWEST)
-
-    new_parser =
-      if peek_token_is(new_parser, Token.semicolon()) do
-        next_token(new_parser)
-      else
-        new_parser
-      end
-
     {%AST.ExpressionStatement{token: token, expression: expression}, new_parser}
   end
 
@@ -78,6 +72,7 @@ defmodule Elixirlang.Parser do
         :INT -> parse_integer_literal(parser)
         :BANG -> parse_prefix_expression(parser)
         :MINUS -> parse_prefix_expression(parser)
+        :PLUS -> parse_prefix_expression(parser)
         :TRUE -> parse_boolean_literal(parser)
         :FALSE -> parse_boolean_literal(parser)
         _ -> {nil, parser}
@@ -90,9 +85,6 @@ defmodule Elixirlang.Parser do
     cond do
       left == nil ->
         {nil, parser}
-
-      peek_token_is(parser, Token.semicolon()) ->
-        {left, parser}
 
       precedence >= peek_precedence_value(parser) ->
         {left, parser}
@@ -114,6 +106,13 @@ defmodule Elixirlang.Parser do
     {%AST.IntegerLiteral{
        token: parser.current_token,
        value: String.to_integer(parser.current_token.literal)
+     }, parser}
+  end
+
+  defp parse_boolean_literal(parser) do
+    {%AST.BooleanLiteral{
+       token: parser.current_token,
+       value: parser.current_token.type == :TRUE
      }, parser}
   end
 
@@ -147,7 +146,8 @@ defmodule Elixirlang.Parser do
      }, new_parser}
   end
 
-  defp infix_parse_fn(token_type) when token_type in [:PLUS, :MINUS, :SLASH, :ASTERISK] do
+  defp infix_parse_fn(token_type)
+       when token_type in [:PLUS, :MINUS, :SLASH, :ASTERISK, :EQ, :NOT_EQ, :LT, :GT, :LTE, :GTE] do
     &parse_infix_expression/2
   end
 
@@ -167,13 +167,6 @@ defmodule Elixirlang.Parser do
     Enum.find(@precedence_values, fn {_k, v} -> v == value end) |> elem(0)
   end
 
-  defp parse_boolean_literal(parser) do
-    {%AST.BooleanLiteral{
-       token: parser.current_token,
-       value: parser.current_token.type == :TRUE
-     }, parser}
-  end
-
   defp next_token(parser) do
     %{
       parser
@@ -181,9 +174,5 @@ defmodule Elixirlang.Parser do
         peek_token: elem(Lexer.next_token(parser.lexer), 0),
         lexer: elem(Lexer.next_token(parser.lexer), 1)
     }
-  end
-
-  defp peek_token_is(parser, token_type) do
-    parser.peek_token.type == token_type
   end
 end
