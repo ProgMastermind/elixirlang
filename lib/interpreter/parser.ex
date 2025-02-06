@@ -78,6 +78,8 @@ defmodule Elixirlang.Parser do
         :INT -> parse_integer_literal(parser)
         :BANG -> parse_prefix_expression(parser)
         :MINUS -> parse_prefix_expression(parser)
+        :TRUE -> parse_boolean_literal(parser)
+        :FALSE -> parse_boolean_literal(parser)
         _ -> {nil, parser}
       end
 
@@ -163,6 +165,13 @@ defmodule Elixirlang.Parser do
 
   defp get_precedence_name(value) do
     Enum.find(@precedence_values, fn {_k, v} -> v == value end) |> elem(0)
+  end
+
+  defp parse_boolean_literal(parser) do
+    {%AST.BooleanLiteral{
+       token: parser.current_token,
+       value: parser.current_token.type == :TRUE
+     }, parser}
   end
 
   defp next_token(parser) do

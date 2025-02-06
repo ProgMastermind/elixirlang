@@ -74,14 +74,34 @@ defmodule Elixirlang.ParserTest do
       }
     ]
 
-    Enum.each(tests, fn {input, expected} ->
+    Enum.each(tests, fn {input, _expected} ->
       program = parse_program(input)
       assert length(program.statements) == 1
+      stmt = List.first(program.statements)
+      assert %AST.ExpressionStatement{} = stmt
+      assert %AST.InfixExpression{} = stmt.expression
     end)
   end
 
   defp assert_integer_literal(expr, value) do
     assert %AST.IntegerLiteral{} = expr
     assert expr.value == value
+  end
+
+  test "parses boolean literals" do
+    tests = [
+      {"true;", true},
+      {"false;", false}
+    ]
+
+    Enum.each(tests, fn {input, expected_value} ->
+      program = parse_program(input)
+
+      assert length(program.statements) == 1
+      stmt = List.first(program.statements)
+      assert %AST.ExpressionStatement{} = stmt
+      assert %AST.BooleanLiteral{} = stmt.expression
+      assert stmt.expression.value == expected_value
+    end)
   end
 end

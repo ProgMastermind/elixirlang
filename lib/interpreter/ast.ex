@@ -30,4 +30,9 @@ defmodule Elixirlang.AST do
     defstruct token: nil, left: nil, operator: "", right: nil
     def token_literal(infix), do: infix.token.literal
   end
+
+  defmodule BooleanLiteral do
+    defstruct token: nil, value: false
+    def token_literal(boolean), do: boolean.token.literal
+  end
 end
