@@ -102,4 +102,20 @@ defmodule Elixirlang.ParserTest do
     assert %AST.IntegerLiteral{} = expr
     assert expr.value == value
   end
+
+  test "parses grouped expressions" do
+    tests = [
+      {"(5 + 5)", "(5 + 5)"},
+      {"(5 + 5) * 2", "((5 + 5) * 2)"},
+      {"2 * (5 + 5)", "(2 * (5 + 5))"},
+      {"-(5 + 5)", "(-(5 + 5))"}
+    ]
+
+    Enum.each(tests, fn {input, _expected} ->
+      program = parse_program(input)
+      assert length(program.statements) == 1
+      stmt = List.first(program.statements)
+      assert %AST.ExpressionStatement{} = stmt
+    end)
+  end
 end

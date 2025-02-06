@@ -75,6 +75,7 @@ defmodule Elixirlang.Parser do
         :PLUS -> parse_prefix_expression(parser)
         :TRUE -> parse_boolean_literal(parser)
         :FALSE -> parse_boolean_literal(parser)
+        :LPAREN -> parse_grouped_expression(parser)
         _ -> {nil, parser}
       end
 
@@ -144,6 +145,17 @@ defmodule Elixirlang.Parser do
        operator: operator,
        right: right
      }, new_parser}
+  end
+
+  defp parse_grouped_expression(parser) do
+    parser = next_token(parser)
+    {exp, parser} = parse_expression(parser, :LOWEST)
+
+    if parser.peek_token.type != :RPAREN do
+      {nil, parser}
+    else
+      {exp, next_token(parser)}
+    end
   end
 
   defp infix_parse_fn(token_type)
