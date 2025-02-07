@@ -40,4 +40,14 @@ defmodule Elixirlang.AST do
     defstruct token: nil, value: ""
     def token_literal(identifier), do: identifier.token.literal
   end
+
+  defmodule BlockStatement do
+    defstruct token: nil, statements: []
+    def token_literal(block), do: block.token.literal
+  end
+
+  defmodule IfExpression do
+    defstruct token: nil, condition: nil, consequence: nil, alternative: nil
+    def token_literal(if_expr), do: if_expr.token.literal
+  end
 end

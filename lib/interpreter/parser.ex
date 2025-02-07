@@ -77,6 +77,7 @@ defmodule Elixirlang.Parser do
         :FALSE -> parse_boolean_literal(parser)
         :LPAREN -> parse_grouped_expression(parser)
         :IDENT -> parse_identifier(parser)
+        :IF -> parse_if_expression(parser)
         _ -> {nil, parser}
       end
 
@@ -164,6 +165,85 @@ defmodule Elixirlang.Parser do
        token: parser.current_token,
        value: parser.current_token.literal
      }, parser}
+  end
+
+  defp parse_if_expression(parser) do
+    token = parser.current_token
+    # move past 'if'
+    parser = next_token(parser)
+
+    unless parser.current_token.type == :LPAREN do
+      {nil, parser}
+    else
+      # move past '('
+      parser = next_token(parser)
+      {condition, parser} = parse_expression(parser, :LOWEST)
+
+      unless parser.peek_token.type == :RPAREN do
+        {nil, parser}
+      else
+        # move past ')'
+        parser = next_token(parser)
+        parser = next_token(parser)
+
+        unless parser.current_token.type == :DO do
+          {nil, parser}
+        else
+          # move past 'do'
+          parser = next_token(parser)
+          {consequence, parser} = parse_block_statement(parser)
+
+          {alternative, parser} =
+            if parser.current_token.type == :ELSE do
+              # move past 'else'
+              parser = next_token(parser)
+              parse_block_statement(parser)
+            else
+              {nil, parser}
+            end
+
+          {%AST.IfExpression{
+             token: token,
+             condition: condition,
+             consequence: consequence,
+             alternative: alternative
+           }, parser}
+        end
+      end
+    end
+  end
+
+  defp parse_block_statement(parser) do
+    token = parser.current_token
+    statements = []
+
+    {statements, parser} = collect_block_statements(parser, statements)
+
+    {%AST.BlockStatement{
+       token: token,
+       statements: statements
+     }, parser}
+  end
+
+  defp collect_block_statements(parser, statements) do
+    case parser.current_token.type do
+      :END ->
+        {statements, next_token(parser)}
+
+      :ELSE ->
+        {statements, parser}
+
+      :EOF ->
+        {statements, parser}
+
+      _ ->
+        {stmt, new_parser} = parse_expression_statement(parser)
+
+        collect_block_statements(
+          next_token(new_parser),
+          statements ++ [stmt]
+        )
+    end
   end
 
   defp infix_parse_fn(token_type)

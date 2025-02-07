@@ -154,4 +154,129 @@ defmodule Elixirlang.ParserTest do
     assert %AST.Identifier{} = expr
     assert expr.value == value
   end
+
+  test "parses if expressions" do
+    input = """
+    if (x < y) do
+      x
+    end
+    """
+
+    program = parse_program(input)
+    assert length(program.statements) == 1
+
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.IfExpression{} = expr = stmt.expression
+
+    assert %AST.InfixExpression{} = expr.condition
+    assert_identifier(expr.condition.left, "x")
+    assert expr.condition.operator == "<"
+    assert_identifier(expr.condition.right, "y")
+
+    assert %AST.BlockStatement{} = expr.consequence
+    assert length(expr.consequence.statements) == 1
+
+    consequence_stmt = List.first(expr.consequence.statements)
+    assert %AST.ExpressionStatement{} = consequence_stmt
+    assert_identifier(consequence_stmt.expression, "x")
+
+    assert is_nil(expr.alternative)
+  end
+
+  test "parses if-else expressions" do
+    input = """
+    if (x < y) do
+      x
+    else
+      y
+    end
+    """
+
+    program = parse_program(input)
+    assert length(program.statements) == 1
+
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.IfExpression{} = expr = stmt.expression
+
+    assert %AST.InfixExpression{} = expr.condition
+    assert_identifier(expr.condition.left, "x")
+    assert expr.condition.operator == "<"
+    assert_identifier(expr.condition.right, "y")
+
+    assert %AST.BlockStatement{} = expr.consequence
+    assert length(expr.consequence.statements) == 1
+    consequence_stmt = List.first(expr.consequence.statements)
+    assert %AST.ExpressionStatement{} = consequence_stmt
+    assert_identifier(consequence_stmt.expression, "x")
+
+    assert %AST.BlockStatement{} = expr.alternative
+    assert length(expr.alternative.statements) == 1
+    alternative_stmt = List.first(expr.alternative.statements)
+    assert %AST.ExpressionStatement{} = alternative_stmt
+    assert_identifier(alternative_stmt.expression, "y")
+  end
+
+  test "parses complex if expressions" do
+    input = """
+    if (5 * 2 > 3 + 4) do
+      10 + 20
+    else
+      30 * 40
+    end
+    """
+
+    program = parse_program(input)
+    assert length(program.statements) == 1
+
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.IfExpression{} = expr = stmt.expression
+
+    # Test condition
+    assert %AST.InfixExpression{} = expr.condition
+    assert %AST.InfixExpression{} = expr.condition.left
+    assert %AST.InfixExpression{} = expr.condition.right
+
+    # Test consequence
+    assert %AST.BlockStatement{} = expr.consequence
+    consequence_stmt = List.first(expr.consequence.statements)
+    assert %AST.ExpressionStatement{} = consequence_stmt
+    assert %AST.InfixExpression{} = consequence_stmt.expression
+
+    # Test alternative
+    assert %AST.BlockStatement{} = expr.alternative
+    alternative_stmt = List.first(expr.alternative.statements)
+    assert %AST.ExpressionStatement{} = alternative_stmt
+    assert %AST.InfixExpression{} = alternative_stmt.expression
+  end
+
+  test "parses nested if expressions" do
+    input = """
+    if (true) do
+      if (false) do
+        1
+      else
+        2
+      end
+    end
+    """
+
+    program = parse_program(input)
+    assert length(program.statements) == 1
+
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.IfExpression{} = outer_if = stmt.expression
+
+    assert %AST.BooleanLiteral{value: true} = outer_if.condition
+    assert %AST.BlockStatement{} = outer_if.consequence
+
+    inner_if_stmt = List.first(outer_if.consequence.statements)
+    assert %AST.ExpressionStatement{} = inner_if_stmt
+    assert %AST.IfExpression{} = inner_if = inner_if_stmt.expression
+
+    assert %AST.BooleanLiteral{value: false} = inner_if.condition
+  end
 end
