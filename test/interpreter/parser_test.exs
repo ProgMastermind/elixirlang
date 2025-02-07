@@ -318,4 +318,32 @@ defmodule Elixirlang.ParserTest do
     assert_identifier(expr.left, "result")
     assert %AST.InfixExpression{} = expr.right
   end
+
+  test "parses function definitions" do
+    input = """
+    def add(x, y) do
+      x + y
+    end
+    """
+
+    program = parse_program(input)
+    assert length(program.statements) == 1
+
+    stmt = List.first(program.statements)
+    assert %AST.FunctionLiteral{} = function = stmt
+
+    assert length(function.parameters) == 2
+    assert_identifier(List.first(function.parameters), "x")
+    assert_identifier(Enum.at(function.parameters, 1), "y")
+
+    assert %AST.BlockStatement{} = function.body
+    assert length(function.body.statements) == 1
+
+    body_stmt = List.first(function.body.statements)
+    assert %AST.ExpressionStatement{} = body_stmt
+    assert %AST.InfixExpression{} = expr = body_stmt.expression
+    assert_identifier(expr.left, "x")
+    assert expr.operator == "+"
+    assert_identifier(expr.right, "y")
+  end
 end

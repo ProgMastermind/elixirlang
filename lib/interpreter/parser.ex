@@ -58,7 +58,87 @@ defmodule Elixirlang.Parser do
   end
 
   defp parse_statement(parser) do
-    parse_expression_statement(parser)
+    case parser.current_token.type do
+      :DEF -> parse_function_definition(parser)
+      _ -> parse_expression_statement(parser)
+    end
+  end
+
+  defp parse_function_definition(parser) do
+    token = parser.current_token
+
+    # Move past 'def'
+    parser = next_token(parser)
+
+    # Parse function name
+    unless parser.current_token.type == :IDENT do
+      {nil, parser}
+    else
+      _name = parser.current_token
+
+      # Move past identifier
+      parser = next_token(parser)
+
+      unless parser.current_token.type == :LPAREN do
+        {nil, parser}
+      else
+        {parameters, parser} = parse_function_parameters(parser)
+
+        unless parser.current_token.type == :DO do
+          {nil, parser}
+        else
+          parser = next_token(parser)
+          {body, parser} = parse_block_statement(parser)
+
+          function = %AST.FunctionLiteral{
+            token: token,
+            parameters: parameters,
+            body: body
+          }
+
+          {function, parser}
+        end
+      end
+    end
+  end
+
+  defp parse_function_parameters(parser) do
+    # Move past '('
+    parser = next_token(parser)
+    parameters = []
+
+    parse_parameters_list(parser, parameters)
+  end
+
+  defp parse_parameters_list(parser, parameters) do
+    case parser.current_token.type do
+      :RPAREN ->
+        {parameters, next_token(parser)}
+
+      :IDENT ->
+        param = %AST.Identifier{
+          token: parser.current_token,
+          value: parser.current_token.literal
+        }
+
+        parser = next_token(parser)
+
+        case parser.current_token.type do
+          :COMMA ->
+            # Move past comma and continue parsing parameters
+            parser = next_token(parser)
+            parse_parameters_list(parser, parameters ++ [param])
+
+          :RPAREN ->
+            {parameters ++ [param], next_token(parser)}
+
+          _ ->
+            {nil, parser}
+        end
+
+      _ ->
+        {nil, parser}
+    end
   end
 
   defp parse_expression_statement(parser) do

@@ -191,4 +191,61 @@ defmodule Elixirlang.LexerTest do
     actual_pairs = Enum.map(actual_tokens, &{&1.type, &1.literal})
     assert actual_pairs == expected_tokens
   end
+
+  test "next_token handles function definitions with parameters" do
+    input = """
+    def add(x, y) do
+      x + y
+    end
+    """
+
+    expected_tokens = [
+      {Token.def_(), "def"},
+      {Token.ident(), "add"},
+      {Token.lparen(), "("},
+      {Token.ident(), "x"},
+      {Token.comma(), ","},
+      {Token.ident(), "y"},
+      {Token.rparen(), ")"},
+      {Token.do_(), "do"},
+      {Token.ident(), "x"},
+      {Token.plus(), "+"},
+      {Token.ident(), "y"},
+      {Token.end_(), "end"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles multiple parameters and nested commas" do
+    input = """
+    def sum(a, b, c) do
+      add(a, b)
+    end
+    """
+
+    expected_tokens = [
+      {Token.def_(), "def"},
+      {Token.ident(), "sum"},
+      {Token.lparen(), "("},
+      {Token.ident(), "a"},
+      {Token.comma(), ","},
+      {Token.ident(), "b"},
+      {Token.comma(), ","},
+      {Token.ident(), "c"},
+      {Token.rparen(), ")"},
+      {Token.do_(), "do"},
+      {Token.ident(), "add"},
+      {Token.lparen(), "("},
+      {Token.ident(), "a"},
+      {Token.comma(), ","},
+      {Token.ident(), "b"},
+      {Token.rparen(), ")"},
+      {Token.end_(), "end"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
 end
