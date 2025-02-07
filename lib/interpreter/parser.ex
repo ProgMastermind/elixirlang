@@ -12,7 +12,8 @@ defmodule Elixirlang.Parser do
     :PLUS => :SUM,
     :MINUS => :SUM,
     :SLASH => :PRODUCT,
-    :ASTERISK => :PRODUCT
+    :ASTERISK => :PRODUCT,
+    :LPAREN => :CALL
   }
 
   @precedence_values %{
@@ -66,17 +67,12 @@ defmodule Elixirlang.Parser do
 
   defp parse_function_definition(parser) do
     token = parser.current_token
-
-    # Move past 'def'
     parser = next_token(parser)
 
-    # Parse function name
     unless parser.current_token.type == :IDENT do
       {nil, parser}
     else
       _name = parser.current_token
-
-      # Move past identifier
       parser = next_token(parser)
 
       unless parser.current_token.type == :LPAREN do
@@ -103,7 +99,6 @@ defmodule Elixirlang.Parser do
   end
 
   defp parse_function_parameters(parser) do
-    # Move past '('
     parser = next_token(parser)
     parameters = []
 
@@ -125,7 +120,6 @@ defmodule Elixirlang.Parser do
 
         case parser.current_token.type do
           :COMMA ->
-            # Move past comma and continue parsing parameters
             parser = next_token(parser)
             parse_parameters_list(parser, parameters ++ [param])
 
@@ -184,6 +178,46 @@ defmodule Elixirlang.Parser do
             {new_left, new_parser} = infix_fn.(parser, left)
             parse_expression_continued(new_parser, new_left, precedence)
         end
+    end
+  end
+
+  defp parse_call_expression(parser, function) do
+    token = parser.current_token
+    {arguments, parser} = parse_call_arguments(parser)
+
+    {%AST.CallExpression{
+       token: token,
+       function: function,
+       arguments: arguments
+     }, parser}
+  end
+
+  defp parse_call_arguments(parser) do
+    case parser.peek_token.type do
+      :RPAREN ->
+        parser = next_token(parser)
+        {[], next_token(parser)}
+
+      _ ->
+        parser = next_token(parser)
+        {arg, parser} = parse_expression(parser, :LOWEST)
+        parse_arguments_list(parser, [arg])
+    end
+  end
+
+  defp parse_arguments_list(parser, arguments) do
+    case parser.peek_token.type do
+      :COMMA ->
+        parser = next_token(parser)
+        parser = next_token(parser)
+        {arg, parser} = parse_expression(parser, :LOWEST)
+        parse_arguments_list(parser, arguments ++ [arg])
+
+      :RPAREN ->
+        {arguments, next_token(next_token(parser))}
+
+      _ ->
+        {arguments, parser}
     end
   end
 
@@ -251,33 +285,28 @@ defmodule Elixirlang.Parser do
 
   defp parse_if_expression(parser) do
     token = parser.current_token
-    # move past 'if'
     parser = next_token(parser)
 
     unless parser.current_token.type == :LPAREN do
       {nil, parser}
     else
-      # move past '('
       parser = next_token(parser)
       {condition, parser} = parse_expression(parser, :LOWEST)
 
       unless parser.peek_token.type == :RPAREN do
         {nil, parser}
       else
-        # move past ')'
         parser = next_token(parser)
         parser = next_token(parser)
 
         unless parser.current_token.type == :DO do
           {nil, parser}
         else
-          # move past 'do'
           parser = next_token(parser)
           {consequence, parser} = parse_block_statement(parser)
 
           {alternative, parser} =
             if parser.current_token.type == :ELSE do
-              # move past 'else'
               parser = next_token(parser)
               parse_block_statement(parser)
             else
@@ -352,6 +381,8 @@ defmodule Elixirlang.Parser do
        right: right
      }, new_parser}
   end
+
+  defp infix_parse_fn(:LPAREN), do: &parse_call_expression/2
 
   defp infix_parse_fn(token_type) when token_type == :MATCH do
     &parse_pattern_match_infix/2

@@ -346,4 +346,28 @@ defmodule Elixirlang.ParserTest do
     assert expr.operator == "+"
     assert_identifier(expr.right, "y")
   end
+
+  test "parses function calls" do
+    input = "add(1, 2 * 3, 4 + 5)"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.CallExpression{} = expr = stmt.expression
+    assert_identifier(expr.function, "add")
+    assert length(expr.arguments) == 3
+  end
+
+  test "parses function calls with no arguments" do
+    input = "empty()"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.CallExpression{} = expr = stmt.expression
+    assert_identifier(expr.function, "empty")
+    assert length(expr.arguments) == 0
+  end
 end
