@@ -2,6 +2,7 @@ defmodule Elixirlang.Parser do
   alias Elixirlang.{Token, Lexer, AST}
 
   @precedences %{
+    :MATCH => :EQUALS,
     :EQ => :EQUALS,
     :NOT_EQ => :EQUALS,
     :LT => :LESSGREATER,
@@ -78,6 +79,7 @@ defmodule Elixirlang.Parser do
         :LPAREN -> parse_grouped_expression(parser)
         :IDENT -> parse_identifier(parser)
         :IF -> parse_if_expression(parser)
+        :MATCH -> parse_pattern_match(parser)
         _ -> {nil, parser}
       end
 
@@ -244,6 +246,35 @@ defmodule Elixirlang.Parser do
           statements ++ [stmt]
         )
     end
+  end
+
+  defp parse_pattern_match(parser) do
+    token = parser.current_token
+    parser = next_token(parser)
+    {right, new_parser} = parse_expression(parser, :LOWEST)
+
+    {%AST.PatternMatchExpression{
+       token: token,
+       left: nil,
+       right: right
+     }, new_parser}
+  end
+
+  defp parse_pattern_match_infix(parser, left) do
+    token = parser.current_token
+    precedence = current_precedence_value(parser)
+    parser = next_token(parser)
+    {right, new_parser} = parse_expression(parser, get_precedence_name(precedence))
+
+    {%AST.PatternMatchExpression{
+       token: token,
+       left: left,
+       right: right
+     }, new_parser}
+  end
+
+  defp infix_parse_fn(token_type) when token_type == :MATCH do
+    &parse_pattern_match_infix/2
   end
 
   defp infix_parse_fn(token_type)

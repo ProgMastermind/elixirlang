@@ -50,4 +50,9 @@ defmodule Elixirlang.AST do
     defstruct token: nil, condition: nil, consequence: nil, alternative: nil
     def token_literal(if_expr), do: if_expr.token.literal
   end
+
+  defmodule PatternMatchExpression do
+    defstruct token: nil, left: nil, right: nil
+    def token_literal(pattern), do: pattern.token.literal
+  end
 end

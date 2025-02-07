@@ -279,4 +279,43 @@ defmodule Elixirlang.ParserTest do
 
     assert %AST.BooleanLiteral{value: false} = inner_if.condition
   end
+
+  test "parses pattern matching expressions" do
+    tests = [
+      {"x = 5", "x", 5},
+      {"y = 10", "y", 10},
+      {"x = y", "x", "y"}
+    ]
+
+    Enum.each(tests, fn {input, left_name, right_value} ->
+      program = parse_program(input)
+      assert length(program.statements) == 1
+
+      stmt = List.first(program.statements)
+      assert %AST.ExpressionStatement{} = stmt
+      assert %AST.PatternMatchExpression{} = pattern = stmt.expression
+
+      assert_identifier(pattern.left, left_name)
+
+      case right_value do
+        value when is_integer(value) ->
+          assert_integer_literal(pattern.right, value)
+
+        value when is_binary(value) ->
+          assert_identifier(pattern.right, value)
+      end
+    end)
+  end
+
+  test "parses complex pattern matching" do
+    input = "result = 5 + 10 * 2"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.PatternMatchExpression{} = expr = stmt.expression
+    assert_identifier(expr.left, "result")
+    assert %AST.InfixExpression{} = expr.right
+  end
 end
