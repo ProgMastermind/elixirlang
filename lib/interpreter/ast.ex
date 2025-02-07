@@ -35,4 +35,9 @@ defmodule Elixirlang.AST do
     defstruct token: nil, value: false
     def token_literal(boolean), do: boolean.token.literal
   end
+
+  defmodule Identifier do
+    defstruct token: nil, value: ""
+    def token_literal(identifier), do: identifier.token.literal
+  end
 end

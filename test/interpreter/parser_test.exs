@@ -118,4 +118,40 @@ defmodule Elixirlang.ParserTest do
       assert %AST.ExpressionStatement{} = stmt
     end)
   end
+
+  test "parses identifiers" do
+    input = "foobar"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.Identifier{} = stmt.expression
+    assert stmt.expression.value == "foobar"
+    assert stmt.expression.token.literal == "foobar"
+  end
+
+  test "parses identifier expressions in operations" do
+    tests = [
+      {"x + y", "x", "+", "y"},
+      {"foo - bar", "foo", "-", "bar"},
+      {"hello * world", "hello", "*", "world"}
+    ]
+
+    Enum.each(tests, fn {input, left_val, operator, right_val} ->
+      program = parse_program(input)
+      assert length(program.statements) == 1
+      stmt = List.first(program.statements)
+      assert %AST.ExpressionStatement{} = stmt
+      assert %AST.InfixExpression{} = stmt.expression
+      assert_identifier(stmt.expression.left, left_val)
+      assert stmt.expression.operator == operator
+      assert_identifier(stmt.expression.right, right_val)
+    end)
+  end
+
+  defp assert_identifier(expr, value) do
+    assert %AST.Identifier{} = expr
+    assert expr.value == value
+  end
 end

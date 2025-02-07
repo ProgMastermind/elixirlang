@@ -76,6 +76,7 @@ defmodule Elixirlang.Parser do
         :TRUE -> parse_boolean_literal(parser)
         :FALSE -> parse_boolean_literal(parser)
         :LPAREN -> parse_grouped_expression(parser)
+        :IDENT -> parse_identifier(parser)
         _ -> {nil, parser}
       end
 
@@ -156,6 +157,13 @@ defmodule Elixirlang.Parser do
     else
       {exp, next_token(parser)}
     end
+  end
+
+  defp parse_identifier(parser) do
+    {%AST.Identifier{
+       token: parser.current_token,
+       value: parser.current_token.literal
+     }, parser}
   end
 
   defp infix_parse_fn(token_type)
