@@ -13,6 +13,10 @@ defmodule Elixirlang.Evaluator do
     Object.Integer.new(value)
   end
 
+  def eval(%AST.BooleanLiteral{value: value}) do
+    Object.Boolean.new(value)
+  end
+
   defp eval_statements(statements) do
     statements
     |> List.last()
