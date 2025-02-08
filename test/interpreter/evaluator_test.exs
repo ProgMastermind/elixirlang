@@ -123,6 +123,44 @@ defmodule Elixirlang.EvaluatorTest do
     end
   end
 
+  describe "if expressions" do
+    test "evaluates if expressions" do
+      tests = [
+        {"if (true) do 10 end", 10},
+        {"if (false) do 10 end", nil},
+        {"if (1) do 10 end", 10},
+        {"if (1 < 2) do 10 end", 10},
+        {"if (1 > 2) do 10 end", nil},
+        {"if (1 < 2) do 10 else 20 end", 10},
+        {"if (1 > 2) do 10 else 20 end", 20}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+
+        case expected do
+          nil ->
+            assert evaluated == nil
+
+          value when is_integer(value) ->
+            assert_integer_object(evaluated, value)
+        end
+      end)
+    end
+
+    test "evaluates nested if expressions" do
+      tests = [
+        {"if (true) do if (true) do 10 end end", 10},
+        {"if (true) do if (false) do 10 else 20 end end", 20}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+        assert_integer_object(evaluated, expected)
+      end)
+    end
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)

@@ -28,6 +28,40 @@ defmodule Elixirlang.Evaluator do
     eval_infix_expression(operator, left_eval, right_eval)
   end
 
+  # Add these new functions to the existing Evaluator module
+  def eval(%AST.IfExpression{
+        condition: condition,
+        consequence: consequence,
+        alternative: alternative
+      }) do
+    condition_eval = eval(condition)
+
+    cond do
+      is_truthy?(condition_eval) ->
+        eval(consequence)
+
+      alternative != nil ->
+        eval(alternative)
+
+      true ->
+        nil
+    end
+  end
+
+  def eval(%AST.BlockStatement{statements: statements}) do
+    eval_block_statements(statements)
+  end
+
+  defp eval_block_statements(statements) do
+    statements
+    |> List.last()
+    |> eval()
+  end
+
+  defp is_truthy?(%Object.Boolean{value: false}), do: false
+  defp is_truthy?(nil), do: false
+  defp is_truthy?(_), do: true
+
   defp eval_statements(statements) do
     statements
     |> List.last()
