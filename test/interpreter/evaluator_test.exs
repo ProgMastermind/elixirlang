@@ -161,6 +161,37 @@ defmodule Elixirlang.EvaluatorTest do
     end
   end
 
+  describe "pattern matching" do
+    test "evaluates pattern matching expressions" do
+      tests = [
+        {"x = 5", 5},
+        {"x = 5; x", 5},
+        {"x = 5; y = x; y", 5},
+        {"x = 5; y = x; x = 10; y", 5},
+        {"x = 5 + 5", 10},
+        {"x = 5; y = x + 5", 10}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+        assert_integer_object(evaluated, expected)
+      end)
+    end
+
+    test "evaluates pattern matching with expressions" do
+      tests = [
+        {"x = 5; x + 5", 10},
+        {"x = 5; y = 10; x + y", 15},
+        {"x = 5; y = 10; z = x + y; z", 15}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+        assert_integer_object(evaluated, expected)
+      end)
+    end
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)
