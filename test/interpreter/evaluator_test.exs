@@ -31,6 +31,47 @@ defmodule Elixirlang.EvaluatorTest do
     end
   end
 
+  describe "prefix expressions" do
+    test "evaluates bang operator" do
+      tests = [
+        {"!true", false},
+        {"!false", true},
+        {"!!true", true},
+        {"!!false", false}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+        assert_boolean_object(evaluated, expected)
+      end)
+    end
+
+    test "evaluates minus operator" do
+      tests = [
+        {"-5", -5},
+        {"-10", -10},
+        {"--5", 5}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+        assert_integer_object(evaluated, expected)
+      end)
+    end
+
+    test "evaluates plus operator" do
+      tests = [
+        {"+5", 5},
+        {"+10", 10}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        evaluated = eval(input)
+        assert_integer_object(evaluated, expected)
+      end)
+    end
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)
