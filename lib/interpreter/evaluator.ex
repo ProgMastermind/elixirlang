@@ -4,12 +4,13 @@ defmodule Elixirlang.Evaluator do
   def eval(node, env \\ Environment.new())
 
   def eval(%AST.Program{statements: statements}, env) do
-    statements
-    |> Enum.reduce({nil, env}, fn statement, {_, current_env} ->
-      {result, new_env} = eval_with_env(statement, current_env)
-      {result, new_env}
-    end)
-    |> elem(0)
+    {result, new_env} =
+      Enum.reduce(statements, {nil, env}, fn statement, {_, current_env} ->
+        {result, updated_env} = eval_with_env(statement, current_env)
+        {result, updated_env}
+      end)
+
+    {result, new_env}
   end
 
   def eval(%AST.ExpressionStatement{expression: expression}, env) do
@@ -55,7 +56,9 @@ defmodule Elixirlang.Evaluator do
   def eval(%AST.BlockStatement{statements: statements}, env) do
     {result, new_env} =
       Enum.reduce(statements, {nil, env}, fn statement, {_, current_env} ->
-        eval_with_env(statement, current_env)
+        {result, _} = eval_with_env(statement, current_env)
+        # Keep the environment but propagate the result
+        {result, current_env}
       end)
 
     {result, new_env}
@@ -74,6 +77,36 @@ defmodule Elixirlang.Evaluator do
       _ ->
         {nil, env}
     end
+  end
+
+  # Update the function evaluation part
+  def eval(%AST.CallExpression{function: function, arguments: arguments}, env) do
+    {fn_obj, _} = eval_with_env(function, env)
+    args = Enum.map(arguments, fn arg -> elem(eval_with_env(arg, env), 0) end)
+
+    case fn_obj do
+      %Object.Function{parameters: params, body: body, env: _fn_env} ->
+        # Create new environment chaining to the outer environment
+        enclosed_env = Environment.new_enclosed(env)
+
+        extended_env =
+          Enum.zip(params, args)
+          |> Enum.reduce(enclosed_env, fn {param, arg}, acc_env ->
+            {_, updated_env} = Environment.set(acc_env, param.value, arg)
+            updated_env
+          end)
+
+        {result, _} = eval_with_env(body, extended_env)
+        {result, env}
+
+      _ ->
+        {nil, env}
+    end
+  end
+
+  # When evaluating function literals, capture the current environment
+  def eval(%AST.FunctionLiteral{parameters: params, body: body}, env) do
+    {%Object.Function{parameters: params, body: body, env: env}, env}
   end
 
   def eval(nil, env), do: {nil, env}

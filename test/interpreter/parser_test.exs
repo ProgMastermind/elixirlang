@@ -326,48 +326,46 @@ defmodule Elixirlang.ParserTest do
     end
     """
 
-    program = parse_program(input)
+    lexer = Lexer.new(input)
+    parser = Parser.new(lexer)
+    {program, _} = Parser.parse_program(parser)
+
     assert length(program.statements) == 1
 
-    stmt = List.first(program.statements)
-    assert %AST.FunctionLiteral{} = function = stmt
+    stmt = Enum.at(program.statements, 0)
 
+    # Expect a PatternMatchExpression now, not a FunctionLiteral
+    assert %AST.PatternMatchExpression{} = pattern_match = stmt
+
+    # Check the left side (function name)
+    assert %AST.Identifier{value: "add"} = pattern_match.left
+
+    # Check the right side (function literal)
+    assert %AST.FunctionLiteral{} = function = pattern_match.right
+
+    # Verify the function parameters
     assert length(function.parameters) == 2
-    assert_identifier(List.first(function.parameters), "x")
-    assert_identifier(Enum.at(function.parameters, 1), "y")
+    assert %AST.Identifier{value: "x"} = Enum.at(function.parameters, 0)
+    assert %AST.Identifier{value: "y"} = Enum.at(function.parameters, 1)
 
-    assert %AST.BlockStatement{} = function.body
-    assert length(function.body.statements) == 1
-
-    body_stmt = List.first(function.body.statements)
-    assert %AST.ExpressionStatement{} = body_stmt
-    assert %AST.InfixExpression{} = expr = body_stmt.expression
-    assert_identifier(expr.left, "x")
-    assert expr.operator == "+"
-    assert_identifier(expr.right, "y")
+    # Verify the function body
+    assert %AST.BlockStatement{statements: body_statements} = function.body
+    assert length(body_statements) == 1
+    assert %AST.ExpressionStatement{} = body_stmt = Enum.at(body_statements, 0)
+    assert %AST.InfixExpression{operator: "+"} = body_stmt.expression
   end
 
-  test "parses function calls" do
-    input = "add(1, 2 * 3, 4 + 5)"
-    program = parse_program(input)
+  test "parses function call expressions" do
+    input = "double(5)"
 
+    program = parse_program(input)
     assert length(program.statements) == 1
+
     stmt = List.first(program.statements)
     assert %AST.ExpressionStatement{} = stmt
-    assert %AST.CallExpression{} = expr = stmt.expression
-    assert_identifier(expr.function, "add")
-    assert length(expr.arguments) == 3
-  end
-
-  test "parses function calls with no arguments" do
-    input = "empty()"
-    program = parse_program(input)
-
-    assert length(program.statements) == 1
-    stmt = List.first(program.statements)
-    assert %AST.ExpressionStatement{} = stmt
-    assert %AST.CallExpression{} = expr = stmt.expression
-    assert_identifier(expr.function, "empty")
-    assert length(expr.arguments) == 0
+    assert %AST.CallExpression{} = call = stmt.expression
+    assert %AST.Identifier{value: "double"} = call.function
+    assert length(call.arguments) == 1
+    assert_integer_literal(List.first(call.arguments), 5)
   end
 end

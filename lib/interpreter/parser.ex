@@ -72,7 +72,7 @@ defmodule Elixirlang.Parser do
     unless parser.current_token.type == :IDENT do
       {nil, parser}
     else
-      _name = parser.current_token
+      name = parser.current_token
       parser = next_token(parser)
 
       unless parser.current_token.type == :LPAREN do
@@ -86,13 +86,23 @@ defmodule Elixirlang.Parser do
           parser = next_token(parser)
           {body, parser} = parse_block_statement(parser)
 
-          function = %AST.FunctionLiteral{
+          function_literal = %AST.FunctionLiteral{
             token: token,
             parameters: parameters,
             body: body
           }
 
-          {function, parser}
+          # Create a PatternMatchExpression to assign the function to the name
+          pattern_match = %AST.PatternMatchExpression{
+            token: token,
+            left: %AST.Identifier{
+              token: name,
+              value: name.literal
+            },
+            right: function_literal
+          }
+
+          {pattern_match, parser}
         end
       end
     end

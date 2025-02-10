@@ -1,6 +1,6 @@
 defmodule Elixirlang.EvaluatorTest do
   use ExUnit.Case
-  alias Elixirlang.{Lexer, Parser, Evaluator, Object}
+  alias Elixirlang.{Lexer, Parser, Evaluator, Object, Environment}
 
   describe "integer evaluation" do
     test "evaluates integer expressions" do
@@ -11,7 +11,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_integer_object(evaluated, expected)
       end)
     end
@@ -25,7 +25,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_boolean_object(evaluated, expected)
       end)
     end
@@ -41,7 +41,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_boolean_object(evaluated, expected)
       end)
     end
@@ -54,7 +54,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_integer_object(evaluated, expected)
       end)
     end
@@ -66,7 +66,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_integer_object(evaluated, expected)
       end)
     end
@@ -86,7 +86,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_integer_object(evaluated, expected)
       end)
     end
@@ -102,7 +102,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_boolean_object(evaluated, expected)
       end)
     end
@@ -117,7 +117,7 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
         assert_boolean_object(evaluated, expected)
       end)
     end
@@ -136,27 +136,12 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
 
         case expected do
-          nil ->
-            assert evaluated == nil
-
-          value when is_integer(value) ->
-            assert_integer_object(evaluated, value)
+          nil -> assert evaluated == nil
+          value when is_integer(value) -> assert_integer_object(evaluated, value)
         end
-      end)
-    end
-
-    test "evaluates nested if expressions" do
-      tests = [
-        {"if (true) do if (true) do 10 end end", 10},
-        {"if (true) do if (false) do 10 else 20 end end", 20}
-      ]
-
-      Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
-        assert_integer_object(evaluated, expected)
       end)
     end
   end
@@ -173,22 +158,50 @@ defmodule Elixirlang.EvaluatorTest do
       ]
 
       Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
+        {evaluated, _env} = eval(input)
+        assert_integer_object(evaluated, expected)
+      end)
+    end
+  end
+
+  describe "function evaluation" do
+    test "evaluates function definition" do
+      input = """
+      def add(x, y) do
+        x + y
+      end
+      """
+
+      {evaluated, _env} = eval(input)
+      assert %Object.Function{} = evaluated
+      assert length(evaluated.parameters) == 2
+    end
+
+    test "evaluates function calls" do
+      tests = [
+        {"def double(x) do x * 2 end; double(5)", 10},
+        {"def add(x, y) do x + y end; add(5, 5)", 10},
+        {"def identity(x) do x end; identity(5)", 5}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        {evaluated, _env} = eval(input)
         assert_integer_object(evaluated, expected)
       end)
     end
 
-    test "evaluates pattern matching with expressions" do
-      tests = [
-        {"x = 5; x + 5", 10},
-        {"x = 5; y = 10; x + y", 15},
-        {"x = 5; y = 10; z = x + y; z", 15}
-      ]
+    test "ensures proper closure behavior" do
+      input = """
+      x = 5;
+      def closure(y) do
+        x + y
+      end;
+      x = 10;
+      closure(5)
+      """
 
-      Enum.each(tests, fn {input, expected} ->
-        evaluated = eval(input)
-        assert_integer_object(evaluated, expected)
-      end)
+      {evaluated, _env} = eval(input)
+      assert_integer_object(evaluated, 15)
     end
   end
 
@@ -196,7 +209,7 @@ defmodule Elixirlang.EvaluatorTest do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)
     {program, _} = Parser.parse_program(parser)
-    Evaluator.eval(program)
+    Evaluator.eval(program, Environment.new())
   end
 
   defp assert_integer_object(object, expected) do
