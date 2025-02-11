@@ -368,4 +368,33 @@ defmodule Elixirlang.ParserTest do
     assert length(call.arguments) == 1
     assert_integer_literal(List.first(call.arguments), 5)
   end
+
+  test "parses nested function calls" do
+    input = "into(add(5, 5), add(2, 3))"
+
+    program = parse_program(input)
+    assert length(program.statements) == 1
+
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.CallExpression{} = outer_call = stmt.expression
+
+    # Verify outer function call (into)
+    assert %AST.Identifier{value: "into"} = outer_call.function
+    assert length(outer_call.arguments) == 2
+
+    # Verify first nested call (add(5, 5))
+    assert %AST.CallExpression{} = first_arg = List.first(outer_call.arguments)
+    assert %AST.Identifier{value: "add"} = first_arg.function
+    assert length(first_arg.arguments) == 2
+    assert_integer_literal(List.first(first_arg.arguments), 5)
+    assert_integer_literal(List.last(first_arg.arguments), 5)
+
+    # Verify second nested call (add(2, 3))
+    assert %AST.CallExpression{} = second_arg = List.last(outer_call.arguments)
+    assert %AST.Identifier{value: "add"} = second_arg.function
+    assert length(second_arg.arguments) == 2
+    assert_integer_literal(List.first(second_arg.arguments), 2)
+    assert_integer_literal(List.last(second_arg.arguments), 3)
+  end
 end

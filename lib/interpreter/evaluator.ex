@@ -81,13 +81,17 @@ defmodule Elixirlang.Evaluator do
 
   # Update the function evaluation part
   def eval(%AST.CallExpression{function: function, arguments: arguments}, env) do
-    {fn_obj, _} = eval_with_env(function, env)
-    args = Enum.map(arguments, fn arg -> elem(eval_with_env(arg, env), 0) end)
+    {fn_obj, env} = eval_with_env(function, env)
+
+    {args, env} =
+      Enum.reduce(arguments, {[], env}, fn arg, {args_acc, current_env} ->
+        {arg_val, updated_env} = eval_with_env(arg, current_env)
+        {args_acc ++ [arg_val], updated_env}
+      end)
 
     case fn_obj do
-      %Object.Function{parameters: params, body: body, env: _fn_env} ->
-        # Create new environment chaining to the outer environment
-        enclosed_env = Environment.new_enclosed(env)
+      %Object.Function{parameters: params, body: body, env: fn_env} ->
+        enclosed_env = Environment.new_enclosed(fn_env)
 
         extended_env =
           Enum.zip(params, args)

@@ -205,8 +205,9 @@ defmodule Elixirlang.Parser do
   defp parse_call_arguments(parser) do
     case parser.peek_token.type do
       :RPAREN ->
+        # Single next_token
         parser = next_token(parser)
-        {[], next_token(parser)}
+        {[], parser}
 
       _ ->
         parser = next_token(parser)
@@ -219,12 +220,15 @@ defmodule Elixirlang.Parser do
     case parser.peek_token.type do
       :COMMA ->
         parser = next_token(parser)
+        # Keep double next_token for comma case
         parser = next_token(parser)
         {arg, parser} = parse_expression(parser, :LOWEST)
         parse_arguments_list(parser, arguments ++ [arg])
 
       :RPAREN ->
-        {arguments, next_token(next_token(parser))}
+        # Single next_token
+        parser = next_token(parser)
+        {arguments, parser}
 
       _ ->
         {arguments, parser}
