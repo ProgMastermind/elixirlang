@@ -252,6 +252,26 @@ defmodule Elixirlang.EvaluatorTest do
     end)
   end
 
+  describe "list evaluation" do
+    test "evaluates list literals" do
+      tests = [
+        {"[]", []},
+        {"[1, 2, 3]", [1, 2, 3]},
+        {"[1 + 2, 3 * 4]", [3, 12]}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        {evaluated, _env} = eval(input)
+        assert_list_object(evaluated, expected)
+      end)
+    end
+
+    defp assert_list_object(object, expected) do
+      assert %Object.List{} = object
+      assert Enum.map(object.elements, fn elem -> elem.value end) == expected
+    end
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)

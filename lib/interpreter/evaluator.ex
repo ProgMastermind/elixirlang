@@ -68,6 +68,16 @@ defmodule Elixirlang.Evaluator do
     {Environment.get(env, name), env}
   end
 
+  def eval(%AST.ListLiteral{elements: elements}, env) do
+    {evaluated_elements, new_env} =
+      Enum.reduce(elements, {[], env}, fn element, {acc_elements, current_env} ->
+        {evaluated, updated_env} = eval_with_env(element, current_env)
+        {acc_elements ++ [evaluated], updated_env}
+      end)
+
+    {%Object.List{elements: evaluated_elements}, new_env}
+  end
+
   def eval(%AST.PatternMatchExpression{left: left, right: right}, env) do
     case left do
       %AST.Identifier{value: name} ->

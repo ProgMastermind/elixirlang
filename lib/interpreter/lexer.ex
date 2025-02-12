@@ -81,6 +81,12 @@ defmodule Elixirlang.Lexer do
         ?} ->
           {Token.new(Token.rbrace(), "}"), read_char(lexer)}
 
+        ?[ ->
+          {Token.new(Token.lbracket(), "["), read_char(lexer)}
+
+        ?] ->
+          {Token.new(Token.rbracket(), "]"), read_char(lexer)}
+
         ?# ->
           lexer = skip_comment(lexer)
           next_token(lexer)

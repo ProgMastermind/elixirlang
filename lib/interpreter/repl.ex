@@ -50,6 +50,37 @@ defmodule Elixirlang.REPL do
   defp print_result(%Object.Boolean{value: value}), do: IO.puts("\e[33m=> #{value}\e[0m")
   defp print_result(%Object.String{value: value}), do: IO.puts("\e[33m=> \"#{value}\"\e[0m")
   defp print_result(%Object.Function{}), do: IO.puts("\e[33m=> <function>\e[0m")
+
+  defp print_result(%Object.List{elements: elements}) do
+    formatted_elements =
+      elements
+      |> Enum.map(fn
+        %Object.Integer{value: v} -> Integer.to_string(v)
+        %Object.Boolean{value: v} -> to_string(v)
+        %Object.String{value: v} -> "\"#{v}\""
+        %Object.List{} = list -> format_nested_list(list)
+        _ -> "nil"
+      end)
+      |> Enum.join(", ")
+
+    IO.puts("\e[33m=> [#{formatted_elements}]\e[0m")
+  end
+
   defp print_result(nil), do: IO.puts("\e[33m=> nil\e[0m")
   defp print_result(result), do: IO.puts("\e[33m=> #{inspect(result)}\e[0m")
+
+  defp format_nested_list(%Object.List{elements: elements}) do
+    formatted_elements =
+      elements
+      |> Enum.map(fn
+        %Object.Integer{value: v} -> Integer.to_string(v)
+        %Object.Boolean{value: v} -> to_string(v)
+        %Object.String{value: v} -> "\"#{v}\""
+        %Object.List{} = list -> format_nested_list(list)
+        _ -> "nil"
+      end)
+      |> Enum.join(", ")
+
+    "[#{formatted_elements}]"
+  end
 end

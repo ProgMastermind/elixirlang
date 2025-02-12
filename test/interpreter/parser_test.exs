@@ -421,4 +421,50 @@ defmodule Elixirlang.ParserTest do
     assert %AST.StringLiteral{value: "Hello"} = expr.left
     assert %AST.StringLiteral{value: " World"} = expr.right
   end
+
+  test "parses list literals" do
+    input = "[1, 2, 3]"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.ListLiteral{} = list = stmt.expression
+    assert length(list.elements) == 3
+
+    Enum.each(Enum.zip(list.elements, [1, 2, 3]), fn {element, value} ->
+      assert_integer_literal(element, value)
+    end)
+  end
+
+  test "parses nested list literals" do
+    input = "[[1, 2], [3, 4]]"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.ListLiteral{} = outer_list = stmt.expression
+    assert length(outer_list.elements) == 2
+
+    Enum.each(outer_list.elements, fn element ->
+      assert %AST.ListLiteral{} = element
+      assert length(element.elements) == 2
+    end)
+  end
+
+  test "parses list with expressions" do
+    input = "[1 + 2, 3 * 4]"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.ListLiteral{} = list = stmt.expression
+    assert length(list.elements) == 2
+
+    [first, second] = list.elements
+    assert %AST.InfixExpression{operator: "+"} = first
+    assert %AST.InfixExpression{operator: "*"} = second
+  end
 end

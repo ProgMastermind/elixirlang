@@ -10,6 +10,7 @@ defmodule Elixirlang.Token do
   def illegal, do: :ILLEGAL
   def eof, do: :EOF
   def concat, do: :CONCAT
+  def pipe, do: :PIPE
 
   # Identifiers and literals
   def ident, do: :IDENT
@@ -38,6 +39,8 @@ defmodule Elixirlang.Token do
   def rparen, do: :RPAREN
   def lbrace, do: :LBRACE
   def rbrace, do: :RBRACE
+  def lbracket, do: :LBRACKET
+  def rbracket, do: :RBRACKET
 
   # Keywords
   def def_, do: :DEF

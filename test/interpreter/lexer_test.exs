@@ -261,4 +261,44 @@ defmodule Elixirlang.LexerTest do
 
     verify_tokens(input, expected_tokens)
   end
+
+  test "next_token handles list brackets and elements" do
+    input = "[1, 2, 3]"
+
+    expected_tokens = [
+      {Token.lbracket(), "["},
+      {Token.int(), "1"},
+      {Token.comma(), ","},
+      {Token.int(), "2"},
+      {Token.comma(), ","},
+      {Token.int(), "3"},
+      {Token.rbracket(), "]"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
+
+  test "next_token handles nested lists" do
+    input = "[[1, 2], [3, 4]]"
+
+    expected_tokens = [
+      {Token.lbracket(), "["},
+      {Token.lbracket(), "["},
+      {Token.int(), "1"},
+      {Token.comma(), ","},
+      {Token.int(), "2"},
+      {Token.rbracket(), "]"},
+      {Token.comma(), ","},
+      {Token.lbracket(), "["},
+      {Token.int(), "3"},
+      {Token.comma(), ","},
+      {Token.int(), "4"},
+      {Token.rbracket(), "]"},
+      {Token.rbracket(), "]"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
 end

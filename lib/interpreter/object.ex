@@ -39,6 +39,17 @@ defmodule Elixirlang.Object do
     def type, do: :STRING
   end
 
+  defmodule List do
+    @enforce_keys [:elements]
+    defstruct [:elements]
+
+    def new(elements) when is_list(elements) do
+      %__MODULE__{elements: elements}
+    end
+
+    def type, do: :LIST
+  end
+
   def type(%Integer{}), do: Integer.type()
   def type(%Boolean{}), do: Boolean.type()
   def type(%Function{}), do: Function.type()

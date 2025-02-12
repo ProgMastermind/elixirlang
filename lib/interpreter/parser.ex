@@ -166,6 +166,7 @@ defmodule Elixirlang.Parser do
         :IF -> parse_if_expression(parser)
         :MATCH -> parse_pattern_match(parser)
         :STRING -> parse_string_literal(parser)
+        :LBRACKET -> parse_list_literal(parser)
         _ -> {nil, parser}
       end
 
@@ -405,6 +406,47 @@ defmodule Elixirlang.Parser do
      }, parser}
   end
 
+  defp parse_list_literal(parser) do
+    token = parser.current_token
+    {elements, new_parser} = parse_list_elements(parser)
+
+    {%AST.ListLiteral{
+       token: token,
+       elements: elements
+     }, new_parser}
+  end
+
+  defp parse_list_elements(parser) do
+    case parser.peek_token.type do
+      :RBRACKET ->
+        parser = next_token(parser)
+        {[], next_token(parser)}
+
+      _ ->
+        parser = next_token(parser)
+        {first_element, parser} = parse_expression(parser, :LOWEST)
+        parse_element_list(parser, [first_element])
+    end
+  end
+
+  defp parse_element_list(parser, elements) do
+    case parser.peek_token.type do
+      :COMMA ->
+        # Skip COMMA
+        parser = next_token(parser)
+        # Move to next element
+        parser = next_token(parser)
+        {element, parser} = parse_expression(parser, :LOWEST)
+        parse_element_list(parser, elements ++ [element])
+
+      :RBRACKET ->
+        {elements, next_token(parser)}
+
+      _ ->
+        {elements, parser}
+    end
+  end
+
   defp infix_parse_fn(:LPAREN), do: &parse_call_expression/2
 
   defp infix_parse_fn(token_type) when token_type == :MATCH do
@@ -423,7 +465,8 @@ defmodule Elixirlang.Parser do
               :GT,
               :LTE,
               :GTE,
-              :CONCAT
+              :CONCAT,
+              :RBRACKET
             ] do
     &parse_infix_expression/2
   end
