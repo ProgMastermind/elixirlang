@@ -28,6 +28,17 @@ defmodule Elixirlang.Object do
     def type, do: :FUNCTION
   end
 
+  defmodule String do
+    @enforce_keys [:value]
+    defstruct [:value]
+
+    def new(value) when is_binary(value) do
+      %__MODULE__{value: value}
+    end
+
+    def type, do: :STRING
+  end
+
   def type(%Integer{}), do: Integer.type()
   def type(%Boolean{}), do: Boolean.type()
   def type(%Function{}), do: Function.type()

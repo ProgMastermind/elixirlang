@@ -48,6 +48,7 @@ defmodule Elixirlang.REPL do
 
   defp print_result(%Object.Integer{value: value}), do: IO.puts("\e[33m=> #{value}\e[0m")
   defp print_result(%Object.Boolean{value: value}), do: IO.puts("\e[33m=> #{value}\e[0m")
+  defp print_result(%Object.String{value: value}), do: IO.puts("\e[33m=> \"#{value}\"\e[0m")
   defp print_result(%Object.Function{}), do: IO.puts("\e[33m=> <function>\e[0m")
   defp print_result(nil), do: IO.puts("\e[33m=> nil\e[0m")
   defp print_result(result), do: IO.puts("\e[33m=> #{inspect(result)}\e[0m")

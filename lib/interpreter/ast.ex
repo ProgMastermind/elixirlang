@@ -65,4 +65,9 @@ defmodule Elixirlang.AST do
     defstruct token: nil, function: nil, arguments: []
     def token_literal(call), do: call.token.literal
   end
+
+  defmodule StringLiteral do
+    defstruct token: nil, value: ""
+    def token_literal(string), do: string.token.literal
+  end
 end

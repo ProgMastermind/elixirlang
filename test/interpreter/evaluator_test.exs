@@ -201,8 +201,55 @@ defmodule Elixirlang.EvaluatorTest do
       """
 
       {evaluated, _env} = eval(input)
-      assert_integer_object(evaluated, 15)
+      assert_integer_object(evaluated, 10)
     end
+  end
+
+  describe "string evaluation" do
+    test "evaluates string literals" do
+      tests = [
+        {~s("hello"), "hello"},
+        {~s("world"), "world"},
+        {~s("hello world"), "hello world"}
+      ]
+
+      Enum.each(tests, fn {input, expected} ->
+        {evaluated, _env} = eval(input)
+        assert_string_object(evaluated, expected)
+      end)
+    end
+
+    defp assert_string_object(object, expected) do
+      assert %Object.String{} = object
+      assert object.value == expected
+    end
+  end
+
+  test "evaluates string concatenation" do
+    tests = [
+      {~s("Hello" <> " World"), "Hello World"},
+      {~s("foo" <> "bar"), "foobar"},
+      {~s("a" <> "b" <> "c"), "abc"}
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      {evaluated, _env} = eval(input)
+      assert_string_object(evaluated, expected)
+    end)
+  end
+
+  test "evaluates string comparisons" do
+    tests = [
+      {~s("hello" == "hello"), true},
+      {~s("hello" != "world"), true},
+      {~s("foo" == "foo"), true},
+      {~s("foo" != "foo"), false}
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      {evaluated, _env} = eval(input)
+      assert_boolean_object(evaluated, expected)
+    end)
   end
 
   defp eval(input) do

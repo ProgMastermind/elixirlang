@@ -11,6 +11,7 @@ defmodule Elixirlang.Parser do
     :GTE => :LESSGREATER,
     :PLUS => :SUM,
     :MINUS => :SUM,
+    :CONCAT => :SUM,
     :SLASH => :PRODUCT,
     :ASTERISK => :PRODUCT,
     :LPAREN => :CALL
@@ -164,6 +165,7 @@ defmodule Elixirlang.Parser do
         :IDENT -> parse_identifier(parser)
         :IF -> parse_if_expression(parser)
         :MATCH -> parse_pattern_match(parser)
+        :STRING -> parse_string_literal(parser)
         _ -> {nil, parser}
       end
 
@@ -396,6 +398,13 @@ defmodule Elixirlang.Parser do
      }, new_parser}
   end
 
+  defp parse_string_literal(parser) do
+    {%AST.StringLiteral{
+       token: parser.current_token,
+       value: parser.current_token.literal
+     }, parser}
+  end
+
   defp infix_parse_fn(:LPAREN), do: &parse_call_expression/2
 
   defp infix_parse_fn(token_type) when token_type == :MATCH do
@@ -403,7 +412,19 @@ defmodule Elixirlang.Parser do
   end
 
   defp infix_parse_fn(token_type)
-       when token_type in [:PLUS, :MINUS, :SLASH, :ASTERISK, :EQ, :NOT_EQ, :LT, :GT, :LTE, :GTE] do
+       when token_type in [
+              :PLUS,
+              :MINUS,
+              :SLASH,
+              :ASTERISK,
+              :EQ,
+              :NOT_EQ,
+              :LT,
+              :GT,
+              :LTE,
+              :GTE,
+              :CONCAT
+            ] do
     &parse_infix_expression/2
   end
 

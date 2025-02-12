@@ -28,10 +28,15 @@ defmodule Elixirlang.Lexer do
           end
 
         ?< ->
-          if peek_char(lexer) == ?= do
-            {Token.new(Token.lte(), "<="), read_char(read_char(lexer))}
-          else
-            {Token.new(Token.lt(), "<"), read_char(lexer)}
+          cond do
+            peek_char(lexer) == ?> ->
+              {Token.new(Token.concat(), "<>"), read_char(read_char(lexer))}
+
+            peek_char(lexer) == ?= ->
+              {Token.new(Token.lte(), "<="), read_char(read_char(lexer))}
+
+            true ->
+              {Token.new(Token.lt(), "<"), read_char(lexer)}
           end
 
         ?> ->

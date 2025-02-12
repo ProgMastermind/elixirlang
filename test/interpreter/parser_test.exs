@@ -397,4 +397,28 @@ defmodule Elixirlang.ParserTest do
     assert_integer_literal(List.first(second_arg.arguments), 2)
     assert_integer_literal(List.last(second_arg.arguments), 3)
   end
+
+  test "parses string literals" do
+    input = ~s("hello world")
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.StringLiteral{} = stmt.expression
+    assert stmt.expression.value == "hello world"
+  end
+
+  test "parses string concatenation" do
+    input = ~s("Hello" <> " World")
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.InfixExpression{} = expr = stmt.expression
+    assert expr.operator == "<>"
+    assert %AST.StringLiteral{value: "Hello"} = expr.left
+    assert %AST.StringLiteral{value: " World"} = expr.right
+  end
 end

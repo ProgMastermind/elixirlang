@@ -113,6 +113,10 @@ defmodule Elixirlang.Evaluator do
     {%Object.Function{parameters: params, body: body, env: env}, env}
   end
 
+  def eval(%AST.StringLiteral{value: value}, env) do
+    {Object.String.new(value), env}
+  end
+
   def eval(nil, env), do: {nil, env}
 
   defp eval_with_env(node, env) do
@@ -136,6 +140,20 @@ defmodule Elixirlang.Evaluator do
 
   defp eval_infix_expression(operator, %Object.Boolean{} = left, %Object.Boolean{} = right) do
     eval_boolean_infix_expression(operator, left, right)
+  end
+
+  # Add this to eval_infix_expression
+  defp eval_infix_expression("<>", left, right)
+       when is_struct(left, Object.String) and is_struct(right, Object.String) do
+    Object.String.new(left.value <> right.value)
+  end
+
+  defp eval_infix_expression("==", %Object.String{value: left}, %Object.String{value: right}) do
+    Object.Boolean.new(left == right)
+  end
+
+  defp eval_infix_expression("!=", %Object.String{value: left}, %Object.String{value: right}) do
+    Object.Boolean.new(left != right)
   end
 
   defp eval_infix_expression(_, _, _), do: nil

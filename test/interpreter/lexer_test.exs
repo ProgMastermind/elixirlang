@@ -248,4 +248,17 @@ defmodule Elixirlang.LexerTest do
 
     verify_tokens(input, expected_tokens)
   end
+
+  test "next_token handles string operations" do
+    input = ~s("hello" <> "world")
+
+    expected_tokens = [
+      {Token.string(), "hello"},
+      {Token.concat(), "<>"},
+      {Token.string(), "world"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
 end

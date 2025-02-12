@@ -9,6 +9,7 @@ defmodule Elixirlang.Token do
   # Token types
   def illegal, do: :ILLEGAL
   def eof, do: :EOF
+  def concat, do: :CONCAT
 
   # Identifiers and literals
   def ident, do: :IDENT
