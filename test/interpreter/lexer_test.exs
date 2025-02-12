@@ -301,4 +301,36 @@ defmodule Elixirlang.LexerTest do
 
     verify_tokens(input, expected_tokens)
   end
+
+  test "next_token handles pipe operator" do
+    input = """
+    [1, 2] |> sum()
+    5 |> double() |> add(3)
+    """
+
+    expected_tokens = [
+      {Token.lbracket(), "["},
+      {Token.int(), "1"},
+      {Token.comma(), ","},
+      {Token.int(), "2"},
+      {Token.rbracket(), "]"},
+      {Token.pipe(), "|>"},
+      {Token.ident(), "sum"},
+      {Token.lparen(), "("},
+      {Token.rparen(), ")"},
+      {Token.int(), "5"},
+      {Token.pipe(), "|>"},
+      {Token.ident(), "double"},
+      {Token.lparen(), "("},
+      {Token.rparen(), ")"},
+      {Token.pipe(), "|>"},
+      {Token.ident(), "add"},
+      {Token.lparen(), "("},
+      {Token.int(), "3"},
+      {Token.rparen(), ")"},
+      {Token.eof(), ""}
+    ]
+
+    verify_tokens(input, expected_tokens)
+  end
 end

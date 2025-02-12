@@ -272,6 +272,18 @@ defmodule Elixirlang.EvaluatorTest do
     end
   end
 
+  test "evaluates pipe expressions" do
+    tests = [
+      {"def double(x) do x * 2 end; 5 |> double()", 10},
+      {"def add(x, y) do x + y end; 5 |> add(3)", 8}
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      {evaluated, _env} = eval(input)
+      assert_integer_object(evaluated, expected)
+    end)
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)

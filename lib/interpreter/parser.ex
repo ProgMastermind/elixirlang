@@ -9,6 +9,7 @@ defmodule Elixirlang.Parser do
     :GT => :LESSGREATER,
     :LTE => :LESSGREATER,
     :GTE => :LESSGREATER,
+    :PIPE => :PIPE,
     :PLUS => :SUM,
     :MINUS => :SUM,
     :CONCAT => :SUM,
@@ -19,12 +20,13 @@ defmodule Elixirlang.Parser do
 
   @precedence_values %{
     :LOWEST => 1,
-    :EQUALS => 2,
-    :LESSGREATER => 3,
-    :SUM => 4,
-    :PRODUCT => 5,
-    :PREFIX => 6,
-    :CALL => 7
+    :PIPE => 2,
+    :EQUALS => 3,
+    :LESSGREATER => 4,
+    :SUM => 5,
+    :PRODUCT => 6,
+    :PREFIX => 7,
+    :CALL => 8
   }
 
   defstruct lexer: nil,
@@ -447,7 +449,22 @@ defmodule Elixirlang.Parser do
     end
   end
 
+  defp parse_pipe_expression(parser, left) do
+    token = parser.current_token
+    precedence = current_precedence_value(parser)
+    parser = next_token(parser)
+    {right, new_parser} = parse_expression(parser, get_precedence_name(precedence))
+
+    {%AST.PipeExpression{
+       token: token,
+       left: left,
+       right: right
+     }, new_parser}
+  end
+
   defp infix_parse_fn(:LPAREN), do: &parse_call_expression/2
+
+  defp infix_parse_fn(:PIPE), do: &parse_pipe_expression/2
 
   defp infix_parse_fn(token_type) when token_type == :MATCH do
     &parse_pattern_match_infix/2

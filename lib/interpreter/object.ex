@@ -50,7 +50,21 @@ defmodule Elixirlang.Object do
     def type, do: :LIST
   end
 
+  defmodule Pipe do
+    @enforce_keys [:left, :right]
+    defstruct [:left, :right]
+
+    def new(left, right) do
+      %__MODULE__{left: left, right: right}
+    end
+
+    def type, do: :PIPE
+  end
+
+  def type(%Pipe{}), do: Pipe.type()
   def type(%Integer{}), do: Integer.type()
   def type(%Boolean{}), do: Boolean.type()
   def type(%Function{}), do: Function.type()
+  def type(%String{}), do: String.type()
+  def type(%List{}), do: List.type()
 end

@@ -75,4 +75,9 @@ defmodule Elixirlang.AST do
     defstruct token: nil, elements: []
     def token_literal(list), do: list.token.literal
   end
+
+  defmodule PipeExpression do
+    defstruct token: nil, left: nil, right: nil
+    def token_literal(pipe), do: pipe.token.literal
+  end
 end

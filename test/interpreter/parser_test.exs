@@ -467,4 +467,32 @@ defmodule Elixirlang.ParserTest do
     assert %AST.InfixExpression{operator: "+"} = first
     assert %AST.InfixExpression{operator: "*"} = second
   end
+
+  test "parses pipe expressions" do
+    input = "[1, 2] |> sum()"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.PipeExpression{} = pipe = stmt.expression
+
+    assert %AST.ListLiteral{} = pipe.left
+    assert %AST.CallExpression{} = pipe.right
+  end
+
+  test "parses chained pipe expressions" do
+    input = "5 |> double() |> add(3)"
+    program = parse_program(input)
+
+    assert length(program.statements) == 1
+    stmt = List.first(program.statements)
+    assert %AST.ExpressionStatement{} = stmt
+    assert %AST.PipeExpression{} = outer_pipe = stmt.expression
+
+    assert %AST.PipeExpression{} = inner_pipe = outer_pipe.left
+    assert %AST.IntegerLiteral{value: 5} = inner_pipe.left
+    assert %AST.CallExpression{} = inner_pipe.right
+    assert %AST.CallExpression{} = outer_pipe.right
+  end
 end

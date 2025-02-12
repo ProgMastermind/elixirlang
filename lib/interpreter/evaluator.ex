@@ -78,6 +78,27 @@ defmodule Elixirlang.Evaluator do
     {%Object.List{elements: evaluated_elements}, new_env}
   end
 
+  def eval(%AST.PipeExpression{left: left, right: right}, env) do
+    {left_val, env} = eval_with_env(left, env)
+
+    case right do
+      %AST.CallExpression{function: function, arguments: args} ->
+        # Convert the evaluated left value back into an AST node for the function call
+        new_args = [to_ast_node(left_val) | args]
+
+        new_call = %AST.CallExpression{
+          token: right.token,
+          function: function,
+          arguments: new_args
+        }
+
+        eval_with_env(new_call, env)
+
+      _ ->
+        {nil, env}
+    end
+  end
+
   def eval(%AST.PatternMatchExpression{left: left, right: right}, env) do
     case left do
       %AST.Identifier{value: name} ->
@@ -243,4 +264,20 @@ defmodule Elixirlang.Evaluator do
   defp is_truthy?(%Object.Boolean{value: false}), do: false
   defp is_truthy?(nil), do: false
   defp is_truthy?(_), do: true
+
+  defp to_ast_node(%Object.Integer{value: value}) do
+    %AST.IntegerLiteral{value: value}
+  end
+
+  defp to_ast_node(%Object.Boolean{value: value}) do
+    %AST.BooleanLiteral{value: value}
+  end
+
+  defp to_ast_node(%Object.String{value: value}) do
+    %AST.StringLiteral{value: value}
+  end
+
+  defp to_ast_node(%Object.List{elements: elements}) do
+    %AST.ListLiteral{elements: Enum.map(elements, &to_ast_node/1)}
+  end
 end
