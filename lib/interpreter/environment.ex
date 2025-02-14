@@ -13,6 +13,11 @@ defmodule Elixirlang.Environment do
           parameters: [%Elixirlang.AST.Identifier{value: "list"}],
           body: :built_in_tl,
           env: nil
+        },
+        "length" => %Elixirlang.Object.Function{
+          parameters: [%Elixirlang.AST.Identifier{value: "list"}],
+          body: :built_in_length,
+          env: nil
         }
       },
       outer: nil

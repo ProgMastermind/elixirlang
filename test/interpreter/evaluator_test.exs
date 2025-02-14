@@ -308,6 +308,19 @@ defmodule Elixirlang.EvaluatorTest do
     end)
   end
 
+  test "evaluates length function" do
+    tests = [
+      {"length([1, 2, 3])", 3},
+      {"x = [5, 6, 7, 8]; length(x)", 4},
+      {"length([])", 0}
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      {evaluated, _env} = eval(input)
+      assert_integer_object(evaluated, expected)
+    end)
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)

@@ -127,8 +127,13 @@ defmodule Elixirlang.Evaluator do
           _ -> {nil, env}
         end
 
+      %Object.Function{body: :built_in_length} ->
+        case List.first(args) do
+          %Object.List{elements: elements} -> {%Object.Integer{value: length(elements)}, env}
+          _ -> {nil, env}
+        end
+
       %Object.Function{parameters: params, body: body, env: fn_env} ->
-        # Your existing function evaluation code here
         enclosed_env = Environment.new_enclosed(fn_env)
 
         extended_env =
