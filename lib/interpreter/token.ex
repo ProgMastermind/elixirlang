@@ -1,4 +1,15 @@
 defmodule Elixirlang.Token do
+  @moduledoc """
+  Defines all token types used in the lexical analysis.
+
+  Includes:
+  - Operators (+, -, *, /, =, ==, etc.)
+  - Delimiters (parentheses, braces, brackets)
+  - Keywords (def, do, end, if, else)
+  - Literals (integers, strings, atoms)
+  - Identifiers
+  """
+
   @type t :: %__MODULE__{
           type: atom(),
           literal: String.t()
@@ -63,11 +74,22 @@ defmodule Elixirlang.Token do
     }
   end
 
-  def lookup_ident(ident) do
-    Map.get(keywords(), ident, :IDENT)
-  end
+  @doc """
+  Creates a new token with the given type and literal value.
 
+  ## Examples
+      iex> Token.new(:INT, "5")
+      %Token{type: :INT, literal: "5"}
+  """
   def new(type, literal) do
     %__MODULE__{type: type, literal: literal}
+  end
+
+  @doc """
+  Looks up whether an identifier is a keyword.
+  Returns the corresponding token type.
+  """
+  def lookup_ident(ident) do
+    Map.get(keywords(), ident, :IDENT)
   end
 end

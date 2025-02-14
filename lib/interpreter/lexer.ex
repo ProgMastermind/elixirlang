@@ -1,13 +1,31 @@
 defmodule Elixirlang.Lexer do
+  @moduledoc """
+  Converts source code into tokens.
+
+  The lexer is the first stage of interpretation, breaking down raw input text
+  into meaningful tokens that can be processed by the parser.
+
+  Example:
+      iex> Lexer.new("5 + 3")
+      #=> Tokens: [INT(5), PLUS, INT(3)]
+  """
+
   alias Elixirlang.Token
 
   defstruct input: "", position: 0, read_position: 0, ch: nil
 
+  @doc """
+  Creates a new lexer instance with the given input string.
+  """
   def new(input) do
     lexer = %__MODULE__{input: input}
     read_char(lexer)
   end
 
+  @doc """
+  Reads the next token from the input stream.
+  Returns a tuple of {token, new_lexer_state}.
+  """
   def next_token(%__MODULE__{} = lexer) do
     lexer = skip_whitespace(lexer)
 

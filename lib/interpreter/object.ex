@@ -1,4 +1,10 @@
 defmodule Elixirlang.Object do
+  @moduledoc """
+  Defines the runtime objects used in the interpreter.
+  Each type represents a different kind of value that can be
+  manipulated during program execution.
+  """
+
   defmodule Integer do
     @enforce_keys [:value]
     defstruct [:value]

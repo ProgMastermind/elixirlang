@@ -1,4 +1,31 @@
 defmodule Elixirlang.Evaluator do
+  @moduledoc """
+  Executes the Abstract Syntax Tree (AST) and produces results.
+
+  The evaluator walks through the AST, executing each node according to the language rules.
+  It handles:
+  - Arithmetic operations
+  - Function calls and closures
+  - Pattern matching
+  - List operations
+  - String manipulation
+  - Conditional expressions
+  - Built-in functions
+  """
+
+  @doc """
+  Evaluates an AST node in the given environment.
+  Returns {result, new_environment}.
+
+  ## Examples
+
+      iex> eval(%AST.IntegerLiteral{value: 5}, env)
+      {%Object.Integer{value: 5}, env}
+
+      iex> eval(%AST.InfixExpression{left: five, operator: "+", right: three}, env)
+      {%Object.Integer{value: 8}, env}
+  """
+
   alias Elixirlang.{AST, Object, Environment}
 
   def eval(node, env \\ Environment.new())

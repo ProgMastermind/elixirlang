@@ -1,4 +1,26 @@
 defmodule Elixirlang.AST do
+  @moduledoc """
+  Defines the Abstract Syntax Tree nodes used by the parser.
+
+  ## Examples
+
+  Integer Literal:
+      %IntegerLiteral{
+        token: %Token{type: :INT, literal: "5"},
+        value: 5
+      }
+
+  Function Call:
+      %CallExpression{
+        token: %Token{type: :IDENT, literal: "add"},
+        function: %Identifier{value: "add"},
+        arguments: [
+          %IntegerLiteral{value: 1},
+          %IntegerLiteral{value: 2}
+        ]
+      }
+  """
+
   defmodule Program do
     defstruct statements: []
 

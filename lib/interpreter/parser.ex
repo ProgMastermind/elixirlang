@@ -1,4 +1,19 @@
 defmodule Elixirlang.Parser do
+  @moduledoc """
+  Converts tokens into an Abstract Syntax Tree (AST).
+
+  The parser implements recursive descent parsing with precedence climbing
+  to handle expressions, functions, and control structures.
+
+  Supports:
+  - Integer arithmetic
+  - String operations
+  - Function definitions
+  - List operations
+  - Pattern matching
+  - Pipe operator
+  """
+
   alias Elixirlang.{Token, Lexer, AST}
 
   @precedences %{
@@ -34,6 +49,9 @@ defmodule Elixirlang.Parser do
             peek_token: nil,
             errors: []
 
+  @doc """
+  Creates a new parser instance from a lexer.
+  """
   def new(lexer) do
     parser = %__MODULE__{lexer: lexer}
 
@@ -42,6 +60,10 @@ defmodule Elixirlang.Parser do
     |> next_token()
   end
 
+  @doc """
+  Parses the complete program and returns an AST.
+  Returns {program_node, parser_state}.
+  """
   def parse_program(parser) do
     program = %AST.Program{statements: []}
     parse_program_statements(parser, program.statements)

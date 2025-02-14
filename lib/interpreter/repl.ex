@@ -1,42 +1,121 @@
 defmodule Elixirlang.REPL do
   alias Elixirlang.{Lexer, Parser, Evaluator, Environment, Object}
 
-  @prompt "\n\e[36m╭─\e[0m \e[1;32mElixirlang\e[0m \e[34m→\e[0m "
-  # @continuation_prompt "\e[36m╰─➤\e[0m "
+  @colors %{
+    prompt: :cyan,
+    result: :yellow,
+    info: :green,
+    type: :blue
+  }
+
+  @prompts %{
+    main: "╭─ λ ",
+    continue: "╰─➤ "
+  }
+
+  defmodule State do
+    defstruct env: nil,
+              multiline_buffer: []
+  end
 
   def start do
-    env = Environment.new()
+    state = %State{env: Environment.new()}
     display_welcome_banner()
-    loop(env)
+    loop(state)
   end
 
   defp display_welcome_banner do
-    IO.puts("""
-    \e[1;35m
-    ╔════════════════════════════════════╗
-    ║     Welcome to Elixirlang REPL     ║
-    ╚════════════════════════════════════╝\e[0m
+    banner = """
+    #{color("╔════════════════════════════════════════════╗", :prompt)}
+    #{color("║           Elixirlang Interactive           ║", :prompt)}
+    #{color("╚════════════════════════════════════════════╝", :prompt)}
 
-    \e[33mType '.exit' to quit\e[0m
-    \e[2mVersion 1.0.0\e[0m
-    """)
+    #{color("Commands:", :type)}
+    #{color("  .help    - Show help", :info)}
+    #{color("  .example - Show examples", :info)}
+    #{color("  .exit    - Exit REPL", :info)}
+    """
+
+    IO.puts(banner)
   end
 
-  defp loop(env) do
-    IO.write(@prompt)
+  defp loop(%State{} = state) do
+    input = read_input(state)
 
-    case IO.gets("") do
-      :eof ->
-        IO.puts("\n\e[1;35mGoodbye! Thanks for using Elixirlang REPL\e[0m")
+    case handle_input(input, state) do
+      {:exit, _} ->
+        IO.puts("\n#{color("Goodbye! Thanks for using Elixirlang", :info)}")
 
-      ".exit\n" ->
-        IO.puts("\n\e[1;35mGoodbye! Thanks for using Elixirlang REPL\e[0m")
+      {:continue, new_state} ->
+        loop(new_state)
+    end
+  end
+
+  defp read_input(%State{multiline_buffer: []} = _state) do
+    IO.write(color(@prompts.main, :prompt))
+    IO.gets("")
+  end
+
+  defp read_input(%State{multiline_buffer: _buffer} = _state) do
+    IO.write(color(@prompts.continue, :prompt))
+    IO.gets("")
+  end
+
+  defp handle_input(input, state) do
+    case String.trim(input) do
+      ".exit" ->
+        {:exit, state}
+
+      ".help" ->
+        handle_help()
+        {:continue, state}
+
+      ".example" ->
+        handle_example()
+        {:continue, state}
 
       input ->
-        {result, new_env} = eval(input, env)
-        print_result(result)
-        loop(new_env)
+        handle_code_input(input, state)
     end
+  end
+
+  defp handle_code_input(input, state) do
+    new_buffer = state.multiline_buffer ++ [input]
+
+    if complete_expression?(Enum.join(new_buffer)) do
+      code =
+        new_buffer
+        |> Enum.join("\n")
+        |> String.trim()
+
+      {result, new_env} = eval(code, state.env)
+      print_result(result)
+      {:continue, %State{state | env: new_env, multiline_buffer: []}}
+    else
+      {:continue, %State{state | multiline_buffer: new_buffer}}
+    end
+  end
+
+  defp complete_expression?(code) do
+    balanced_do = count_keyword(code, "do") == count_keyword(code, "end")
+    balanced_brackets = count_chars(code, "[") == count_chars(code, "]")
+    balanced_parens = count_chars(code, "(") == count_chars(code, ")")
+
+    balanced_do && balanced_brackets && balanced_parens
+  end
+
+  defp count_keyword(str, keyword) do
+    str
+    |> String.split(keyword)
+    |> length()
+    |> Kernel.-(1)
+    |> max(0)
+  end
+
+  defp count_chars(str, char) do
+    str
+    |> String.graphemes()
+    |> Enum.count(&(&1 == char))
   end
 
   defp eval(input, env) do
@@ -46,41 +125,85 @@ defmodule Elixirlang.REPL do
     Evaluator.eval(program, env)
   end
 
-  defp print_result(%Object.Integer{value: value}), do: IO.puts("\e[33m=> #{value}\e[0m")
-  defp print_result(%Object.Boolean{value: value}), do: IO.puts("\e[33m=> #{value}\e[0m")
-  defp print_result(%Object.String{value: value}), do: IO.puts("\e[33m=> \"#{value}\"\e[0m")
-  defp print_result(%Object.Function{}), do: IO.puts("\e[33m=> <function>\e[0m")
+  defp print_result(%Object.Integer{value: value}),
+    do: IO.puts("#{color("=>", :result)} #{value}")
 
-  defp print_result(%Object.List{elements: elements}) do
-    formatted_elements =
+  defp print_result(%Object.Boolean{value: value}),
+    do: IO.puts("#{color("=>", :result)} #{value}")
+
+  defp print_result(%Object.String{value: value}),
+    do: IO.puts("#{color("=>", :result)} \"#{value}\"")
+
+  defp print_result(%Object.Function{}), do: IO.puts("#{color("=>", :result)} <function>")
+
+  defp print_result(%Object.List{elements: elements}),
+    do: IO.puts("#{color("=>", :result)} #{format_list(elements)}")
+
+  defp print_result(nil), do: IO.puts("#{color("=>", :result)} nil")
+
+  defp format_list(elements) do
+    inner =
       elements
       |> Enum.map(fn
-        %Object.Integer{value: v} -> Integer.to_string(v)
-        %Object.Boolean{value: v} -> to_string(v)
+        %Object.Integer{value: v} -> "#{v}"
+        %Object.Boolean{value: v} -> "#{v}"
         %Object.String{value: v} -> "\"#{v}\""
-        %Object.List{} = list -> format_nested_list(list)
+        %Object.List{elements: e} -> format_list(e)
         _ -> "nil"
       end)
       |> Enum.join(", ")
 
-    IO.puts("\e[33m=> [#{formatted_elements}]\e[0m")
+    "[#{inner}]"
   end
 
-  defp print_result(nil), do: IO.puts("\e[33m=> nil\e[0m")
-  defp print_result(result), do: IO.puts("\e[33m=> #{inspect(result)}\e[0m")
+  defp handle_help do
+    help_text = """
 
-  defp format_nested_list(%Object.List{elements: elements}) do
-    formatted_elements =
-      elements
-      |> Enum.map(fn
-        %Object.Integer{value: v} -> Integer.to_string(v)
-        %Object.Boolean{value: v} -> to_string(v)
-        %Object.String{value: v} -> "\"#{v}\""
-        %Object.List{} = list -> format_nested_list(list)
-        _ -> "nil"
-      end)
-      |> Enum.join(", ")
+    #{color("Available Commands:", :type)}
+    #{color("  .help    - Show this help", :info)}
+    #{color("  .example - Show examples", :info)}
+    #{color("  .exit    - Exit REPL", :info)}
 
-    "[#{formatted_elements}]"
+    #{color("Features:", :type)}
+    #{color("  • Integer arithmetic: 1 + 2 * 3", :info)}
+    #{color("  • String operations: \"hello\" <> \" world\"", :info)}
+    #{color("  • List manipulation: [1, 2, 3] |> length()", :info)}
+    #{color("  • Functions: def add(x, y) do x + y end", :info)}
+    #{color("  • Pattern matching: x = 5", :info)}
+    #{color("  • Conditionals: if (x > 0) do \"positive\" else \"negative\" end", :info)}
+    """
+
+    IO.puts(help_text)
+  end
+
+  defp handle_example do
+    example_text = """
+
+    #{color("# Try these examples:", :type)}
+
+    #{color("# Arithmetic", :info)}
+    5 + 3 * 2
+
+    #{color("# Functions", :info)}
+    def double(x) do
+      x * 2
+    end
+    double(5)
+
+    #{color("# Lists", :info)}
+    [1, 2, 3] |> length()
+    [[1+2], [3+4]]
+
+    #{color("# Pattern Matching", :info)}
+    x = 5
+    y = x + 3
+    """
+
+    IO.puts(example_text)
+  end
+
+  defp color(text, color_name) do
+    IO.ANSI.format([Map.get(@colors, color_name), text, :reset])
+    |> IO.iodata_to_binary()
   end
 end
