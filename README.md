@@ -13,7 +13,6 @@ This interpreter implements a small programming language with syntax inspired by
 - String operations (`"hello" <> " world"`)
 - Boolean expressions (`true`, `false`)
 - List manipulation (`[1, 2, 3] |> length()`)
-- Functions with closure support
 - Pattern matching (`x = 5`)
 - Pipe operator (`|>`)
 - Built-in functions (`length/1`, `hd/1`, `tl/1`)
@@ -56,27 +55,27 @@ iex> Elixirlang.main()
 ╭─ λ "Hello" <> " World"
 => "Hello World"
 
+# Function definition and usage
+╭─ λ def add(a, b) do
+╰─➤   a + b
+╰─➤ end
+=> <function>
+╭─ λ add(5, 3)
+=> 8
+
 # Pattern matching
 ╭─ λ x = 5
 => 5
-╭─ λ y = x + 3
+╭─ λ y = add(x, 3)
 => 8
 
 # Lists
 ╭─ λ [1, 2, 3] |> length()
 => 3
 
-# Functions
-╭─ λ def double(x) do
-╰─➤   x * 2
-╰─➤ end
-=> <function>
-╭─ λ double(5)
-=> 10
-
-# Pipe operator
-╭─ λ [1, 2, 3] |> hd()
-=> 1
+# Pipe operator with functions
+╭─ λ 5 |> add(3)
+=> 8
 ```
 
 ## Project Structure
@@ -127,7 +126,6 @@ test/
 - **Pattern Matching**: Extensively used in parser and evaluator
 - **Structs**: For representing tokens, AST nodes, and runtime objects
 - **Recursion**: For tree traversal and evaluation
-- **Protocols**: For type-specific behavior
 - **Immutable Data**: All state changes create new copies
 
 ## Additional Notes
@@ -142,8 +140,6 @@ test/
 - Error handling and better error messages
 - More built-in functions
 - Module system
-- Type system
-- Standard library
 - Documentation improvements
 
 ## Testing

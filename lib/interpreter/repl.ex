@@ -81,14 +81,10 @@ defmodule Elixirlang.REPL do
 
   defp handle_code_input(input, state) do
     new_buffer = state.multiline_buffer ++ [input]
+    code = Enum.join(new_buffer, "\n")
 
-    if complete_expression?(Enum.join(new_buffer)) do
-      code =
-        new_buffer
-        |> Enum.join("\n")
-        |> String.trim()
-
-      {result, new_env} = eval(code, state.env)
+    if complete_expression?(code) do
+      {result, new_env} = eval(String.trim(code), state.env)
       print_result(result)
       {:continue, %State{state | env: new_env, multiline_buffer: []}}
     else
@@ -97,11 +93,25 @@ defmodule Elixirlang.REPL do
   end
 
   defp complete_expression?(code) do
+    code = String.trim(code)
+    lines = String.split(code, "\n", trim: true)
+
     balanced_do = count_keyword(code, "do") == count_keyword(code, "end")
     balanced_brackets = count_chars(code, "[") == count_chars(code, "]")
     balanced_parens = count_chars(code, "(") == count_chars(code, ")")
 
-    balanced_do && balanced_brackets && balanced_parens
+    # For single-line expressions
+    if length(lines) == 1 do
+      balanced_brackets && balanced_parens &&
+        (!String.contains?(code, "do") ||
+           (String.contains?(code, "do") && String.contains?(code, "end")))
+    else
+      # For multiline expressions
+      last_line = List.last(lines) |> String.trim()
+
+      balanced_do && balanced_brackets && balanced_parens &&
+        (String.ends_with?(last_line, "end") || !String.contains?(code, "do"))
+    end
   end
 
   defp count_keyword(str, keyword) do
@@ -185,10 +195,8 @@ defmodule Elixirlang.REPL do
     5 + 3 * 2
 
     #{color("# Functions", :info)}
-    def double(x) do
-      x * 2
-    end
-    double(5)
+    def add(x, y) do a + b end
+    add(2, 3)
 
     #{color("# Lists", :info)}
     [1, 2, 3] |> length()
