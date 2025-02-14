@@ -2,7 +2,21 @@ defmodule Elixirlang.Environment do
   defstruct store: %{}, outer: nil
 
   def new do
-    %__MODULE__{store: %{}, outer: nil}
+    %__MODULE__{
+      store: %{
+        "hd" => %Elixirlang.Object.Function{
+          parameters: [%Elixirlang.AST.Identifier{value: "list"}],
+          body: :built_in_hd,
+          env: nil
+        },
+        "tl" => %Elixirlang.Object.Function{
+          parameters: [%Elixirlang.AST.Identifier{value: "list"}],
+          body: :built_in_tl,
+          env: nil
+        }
+      },
+      outer: nil
+    }
   end
 
   def new_enclosed(outer) do
@@ -18,7 +32,6 @@ defmodule Elixirlang.Environment do
   end
 
   def set(env, name, value) do
-    # Always set in current environment, allowing shadowing
     {value, %{env | store: Map.put(env.store, name, value)}}
   end
 end

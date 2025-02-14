@@ -284,6 +284,30 @@ defmodule Elixirlang.EvaluatorTest do
     end)
   end
 
+  test "evaluates hd function" do
+    tests = [
+      {"hd([1, 2, 3])", 1},
+      {"x = [5, 6, 7]; hd(x)", 5}
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      {evaluated, _env} = eval(input)
+      assert_integer_object(evaluated, expected)
+    end)
+  end
+
+  test "evaluates tl function" do
+    tests = [
+      {"tl([1, 2, 3])", [2, 3]},
+      {"x = [5, 6, 7]; tl(x)", [6, 7]}
+    ]
+
+    Enum.each(tests, fn {input, expected} ->
+      {evaluated, _env} = eval(input)
+      assert_list_object(evaluated, expected)
+    end)
+  end
+
   defp eval(input) do
     lexer = Lexer.new(input)
     parser = Parser.new(lexer)

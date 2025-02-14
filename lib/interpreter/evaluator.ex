@@ -110,18 +110,25 @@ defmodule Elixirlang.Evaluator do
     end
   end
 
-  # Update the function evaluation part
   def eval(%AST.CallExpression{function: function, arguments: arguments}, env) do
     {fn_obj, env} = eval_with_env(function, env)
-
-    {args, env} =
-      Enum.reduce(arguments, {[], env}, fn arg, {args_acc, current_env} ->
-        {arg_val, updated_env} = eval_with_env(arg, current_env)
-        {args_acc ++ [arg_val], updated_env}
-      end)
+    {args, env} = eval_arguments(arguments, env)
 
     case fn_obj do
+      %Object.Function{body: :built_in_hd} ->
+        case List.first(args) do
+          %Object.List{elements: [head | _]} -> {head, env}
+          _ -> {nil, env}
+        end
+
+      %Object.Function{body: :built_in_tl} ->
+        case List.first(args) do
+          %Object.List{elements: [_ | tail]} -> {%Object.List{elements: tail}, env}
+          _ -> {nil, env}
+        end
+
       %Object.Function{parameters: params, body: body, env: fn_env} ->
+        # Your existing function evaluation code here
         enclosed_env = Environment.new_enclosed(fn_env)
 
         extended_env =
@@ -133,9 +140,6 @@ defmodule Elixirlang.Evaluator do
 
         {result, _} = eval_with_env(body, extended_env)
         {result, env}
-
-      _ ->
-        {nil, env}
     end
   end
 
@@ -279,5 +283,12 @@ defmodule Elixirlang.Evaluator do
 
   defp to_ast_node(%Object.List{elements: elements}) do
     %AST.ListLiteral{elements: Enum.map(elements, &to_ast_node/1)}
+  end
+
+  defp eval_arguments(arguments, env) do
+    Enum.reduce(arguments, {[], env}, fn arg, {args_acc, current_env} ->
+      {arg_val, updated_env} = eval_with_env(arg, current_env)
+      {args_acc ++ [arg_val], updated_env}
+    end)
   end
 end
